@@ -3,120 +3,192 @@
 namespace App\Controllers;
 
 use App\Models\ProductsModel;
-use CodeIgniter\Controller;
-use App\Models\LogModel;
+use App\Models\CategoryModel;
+use App\Models\SupplierModel;
+use App\Models\StockAdjustmentModel;
 
-class Products extends Controller
+class Products extends BaseController
 {
-    public function index(){
-        $model = new ProductsModel();
-        $data['Products'] = $model->findAll();
-        return view('Products/index', $data);
+    protected $productModel;
+    protected $categoryModel;
+    protected $supplierModel;
+    protected $stockAdjustmentModel;
+
+    public function __construct()
+    {
+        $this->productModel = new ProductsModel();
+        $this->categoryModel = new CategoryModel();
+        $this->supplierModel = new SupplierModel();
+        $this->stockAdjustmentModel = new StockAdjustmentModel();
+        helper(['form', 'url']);
     }
 
-    public function save(){
-        $name = $this->request->getPost('name');
-        $price = $this->request->getPost('price');
-        $stock = $this->request->getPost('stock');
-        $category = $this->request->getPost('category');
-       
-        if (!$price || !$stock) {
-            return $this->response->setJSON(['status' => 'error', 'message' => 'price and password are required']);
+    // --------------------------------------------------------------------
+    // List all products (main page)
+    // --------------------------------------------------------------------
+    public function index()
+    {
+        $data['title'] = 'Products';
+        $data['products'] = $this->productModel->getProductsWithDetails();
+        $data['categories'] = $this->categoryModel->findAll();
+        $data['suppliers'] = $this->supplierModel->findAll();
+        
+        return view('products/index', $data);
+    }
+
+    // --------------------------------------------------------------------
+    // AJAX endpoint for product count (used in dashboard)
+    // --------------------------------------------------------------------
+    public function getCount()
+    {
+        $count = $this->productModel->countAll();
+        return $this->response->setJSON(['count' => $count]);
+    }
+
+    // --------------------------------------------------------------------
+    // Show create form (modal or page) – we'll return JSON for modal
+    // --------------------------------------------------------------------
+    public function create()
+    {
+        if ($this->request->isAJAX()) {
+            $data = [
+                'categories' => $this->categoryModel->findAll(),
+                'suppliers'  => $this->supplierModel->findAll(),
+            ];
+            return $this->response->setJSON([
+                'status' => 'success',
+                'html'   => view('products/form_modal', $data)
+            ]);
+        }
+        // Fallback for non-AJAX
+        return redirect()->to('/products');
+    }
+
+    // --------------------------------------------------------------------
+    // Store new product
+    // --------------------------------------------------------------------
+    public function store()
+    {
+        $rules = $this->productModel->validationRules;
+        
+        if (! $this->validate($rules)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'errors' => $this->validator->getErrors()
+                ]);
+            }
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        $ProductsModel = new \App\Models\ProductsModel();
-        $logModel = new LogModel();
+        $data = $this->request->getPost();
+        $this->productModel->save($data);
 
-        // Check if price already exists
-        $existingUser = $ProductsModel->where('price', $price)->first();
-        if ($existingUser) {
-            return $this->response->setJSON(['status' => 'error', 'message' => 'price is already in use']);
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'success', 'message' => 'Product added successfully']);
+        }
+        
+        return redirect()->to('/products')->with('message', 'Product added successfully');
+    }
+
+    // --------------------------------------------------------------------
+    // Edit product – return data for modal
+    // --------------------------------------------------------------------
+    public function edit($id)
+    {
+        $product = $this->productModel->getWithDetails($id);
+        if (! $product) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Product not found']);
+            }
+            return redirect()->to('/products')->with('error', 'Product not found');
         }
 
-        $data = [
-            'name'       => $name,
-            'price'      => $price,
-            'stock'   => password_hash($stock, PASSWORD_DEFAULT),
-            'category'       => $category,
-          
-        ];
-
-        if ($ProductsModel->insert($data)) {
-            $logModel->addLog('New User has been added: ' . $name, 'ADD');
-            return $this->response->setJSON(['status' => 'success']);
-        } else {
-            return $this->response->setJSON(['status' => 'error', 'message' => 'Failed to save user']);
+        if ($this->request->isAJAX()) {
+            $data = [
+                'product'    => $product,
+                'categories' => $this->categoryModel->findAll(),
+                'suppliers'  => $this->supplierModel->findAll(),
+            ];
+            return $this->response->setJSON([
+                'status' => 'success',
+                'html'   => view('products/form_modal', $data)
+            ]);
         }
     }
 
-    public function update(){
-        $model = new ProductsModel();
-        $logModel = new LogModel();
-        $userId = $this->request->getPost('id');
-        $name = $this->request->getPost('name');
-        $price = $this->request->getPost('price');
-        $stock = $this->request->getPost('stock');
-        $category = $this->request->getPost('category');
-      
-    // Validate the input
-        if (empty($price)) {
-            return $this->response->setJSON(['success' => false, 'message' => 'Email is required']);
+    // --------------------------------------------------------------------
+    // Update product
+    // --------------------------------------------------------------------
+    public function update($id)
+    {
+        $rules = $this->productModel->validationRules;
+        // Modify unique rule for update
+        $rules['sku'] = "required|is_unique[products.sku,id,{$id}]";
+          $rules['id']  = 'permit_empty|is_natural_no_zero'; 
+        if (! $this->validate($rules)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'error',
+                    'errors' => $this->validator->getErrors()
+                ]);
+            }
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-   
-}
+        $data = $this->request->getPost();
+        $this->productModel->update($id, $data);
 
-public function delete($id){
-    $model = new ProductsModel();
-    $logModel = new LogModel();
-    $user = $model->find($id);
-    if (!$user) {
-        return $this->response->setJSON(['success' => false, 'message' => 'User not found.']);
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'success', 'message' => 'Product updated successfully']);
+        }
+        
+        return redirect()->to('/products')->with('message', 'Product updated successfully');
     }
 
-    $deleted = $model->delete($id);
-
-    if ($deleted) {
-        $logModel->addLog('Delete user', 'DELETED');
-        return $this->response->setJSON(['success' => true, 'message' => 'User deleted successfully.']);
-    } else {
-        return $this->response->setJSON(['success' => false, 'message' => 'Failed to delete user.']);
-    }
-}
-
-public function fetchRecords()
-{
-    $request = service('request');
-    $model = new \App\Models\ProductsModel();
-
-    $start = $request->getPost('start') ?? 0;
-    $length = $request->getPost('length') ?? 10;
-    $searchValue = $request->getPost('search')['value'] ?? '';
-
-    $totalRecords = $model->countAll();
-    $result = $model->getRecords($start, $length, $searchValue);
-
-    $data = [];
-    $counter = $start + 1;
-    foreach ($result['data'] as $row) {
-        $row['row_number'] = $counter++;
-        $data[] = $row;
+    // --------------------------------------------------------------------
+    // Delete product
+    // --------------------------------------------------------------------
+    public function delete($id)
+    {
+        $this->productModel->delete($id);
+        return redirect()->to('/products')->with('message', 'Product deleted');
     }
 
-    return $this->response->setJSON([
-        'draw' => intval($request->getPost('draw')),
-        'recordsTotal' => $totalRecords,
-        'recordsFiltered' => $result['filtered'],
-        'data' => $data,
-    ]);
-}
+    // --------------------------------------------------------------------
+    // Restock product (increment stock and log adjustment)
+    // --------------------------------------------------------------------
+    public function restock($id)
+    {
+        if ($this->request->getMethod() === 'post') {
+            $quantity = (int) $this->request->getPost('quantity');
+            $reason   = $this->request->getPost('reason') ?? 'Manual restock';
+            
+            if ($quantity <= 0) {
+                return redirect()->back()->with('error', 'Quantity must be positive');
+            }
 
-public function getCount()
-{
-    $db = \Config\Database::connect();
-    $query = $db->query("SELECT COUNT(*) as total FROM product"); // Make sure table name is 'product'
-    $result = $query->getRow();
-    
-    return $this->response->setJSON(['count' => $result->total]);
-}
+            // Record stock adjustment (trigger will update product stock_qty)
+            $this->stockAdjustmentModel->insert([
+                'product_id' => $id,
+                'user_id'    => session()->get('id'),
+                'type'       => 'in',
+                'quantity'   => $quantity,
+                'reason'     => $reason,
+            ]);
+
+            return redirect()->to('/products')->with('message', "Stock increased by {$quantity}");
+        }
+
+        // For AJAX modal content
+        if ($this->request->isAJAX()) {
+            $product = $this->productModel->find($id);
+            return $this->response->setJSON([
+                'status' => 'success',
+                'html'   => view('products/restock_modal', ['product' => $product])
+            ]);
+        }
+        
+        return redirect()->to('/products');
+    }
 }

@@ -32,3 +32,24 @@ $routes->post('users/fetchRecords', 'Users::fetchRecords');
 
 // Logs routes for admin
 $routes->get('/log', 'Logs::log');
+
+// Products resource
+$routes->get('products', 'Products::index');
+$routes->get('products/getCount', 'Products::getCount');
+$routes->get('products/create', 'Products::create');
+$routes->post('products', 'Products::store');
+$routes->get('products/(:num)/edit', 'Products::edit/$1');
+$routes->post('products/(:num)', 'Products::update/$1');
+$routes->delete('products/(:num)', 'Products::delete/$1');
+$routes->post('products/(:num)/restock', 'Products::restock/$1');
+$routes->get('products/(:num)/restock', 'Products::restock/$1'); // for modal fetch
+
+// For DataTable AJAX if needed
+$routes->get('products/json', 'Products::jsonList');
+
+$routes->get('categories', 'Categories::index');
+$routes->get('categories/create', 'Categories::create');
+$routes->post('categories', 'Categories::store');
+$routes->get('categories/(:num)/edit', 'Categories::edit/$1');
+$routes->post('categories/(:num)', 'Categories::update/$1');
+$routes->get('categories/delete/(:num)', 'Categories::delete/$1');

@@ -1,183 +1,189 @@
-function showToast(type, message) {
-    if (type === 'success') {
-        toastr.success(message, 'Success');
-    } else {
-        toastr.error(message, 'Error');
-    }
-}
+// products.js - Compatible with rStore Products Module
 
-$('#addUserForm').on('submit', function (e) {
-    e.preventDefault();
-    $.ajax({
-        url: baseUrl + 'products/save',
-        method: 'POST',
-        data: $(this).serialize(),
-        dataType: 'json',
-        success: function (response) {
-            if (response.status === 'success') {
-                $('#AddNewModal').modal('hide');
-                $('#addUserForm')[0].reset();
-                showToast('success', 'products added successfully!');
-                setTimeout(() => {
-                    location.reload();
-                }, 1000); 
-            } else {
-                showToast('error', response.message || 'Failed to add user.');
-            }
-        },
-        error: function () {
-            showToast('error', 'An error occurred.');
-        }
+// Toastr notification helper
+// Ensure Bootstrap modal is properly initialized
+$(document).ready(function() {
+    // Test if modal works
+    console.log('jQuery version:', $.fn.jquery);
+    console.log('Bootstrap modal available:', typeof $.fn.modal !== 'undefined');
+    
+    // Manual modal trigger to avoid data-toggle issues
+    $('#addNewProductBtn').on('click', function(e) {
+        e.preventDefault();
+        $('#AddNewModal').modal('show');
     });
 });
 
-$(document).on('click', '.edit-btn', function () {
-   const userId = $(this).data('id'); 
-   $.ajax({
-    url: baseUrl + 'products/edit/' + userId,
-    method: 'GET',
-    dataType: 'json',
-    success: function (response) {
-        if (response.data) {
-            $('#editUserModal #name').val(response.data.name);
-            $('#editUserModal #userId').val(response.data.id);
-            $('#editUserModal #price').val(response.data.price);
-            $('#editUserModal #stock').val(response.data.stock);
-            $('#editUserModal #category').val(response.data.category);
-            $('#editUserModal').modal('show');
+function showToast(type, message) {
+    if (typeof toastr !== 'undefined') {
+        if (type === 'success') {
+            toastr.success(message, 'Success');
         } else {
-            alert('Error fetching user data');
+            toastr.error(message, 'Error');
         }
-    },
-    error: function () {
-        alert('Error fetching user data');
+    } else {
+        alert(message);
     }
-});
-});
+}
 
+$(document).ready(function() {
+    // Initialize DataTable (client-side)
+    $('#productsTable').DataTable({
+        "responsive": true,
+        "lengthChange": true,
+        "autoWidth": false,
+        "order": [[1, 'asc']]
+    });
 
-$(document).ready(function () {
-    $('#editUserForm').on('submit', function (e) {
-        e.preventDefault(); 
-
+    // Add Product Button
+    $('#addProductBtn').click(function() {
+        $('#productModalLabel').text('Add New Product');
         $.ajax({
-            url: baseUrl + 'products/update',
-            method: 'POST',
-            data: $(this).serialize(),
+            url: baseUrl + 'products/create',
+            type: 'GET',
             dataType: 'json',
-            success: function (response) {
-                if (response.success) {
-                    $('#editUserModal').modal('hide');
-                    showToast('success', 'User Updated successfully!');
-                    setTimeout(() => location.reload(), 1000);
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#productModalBody').html(response.html);
+                    $('#productModal').modal('show');
                 } else {
-                    alert('Error updating: ' + (response.message || 'Unknown error'));
+                    showToast('error', 'Failed to load form.');
                 }
             },
-            error: function (xhr) {
-                alert('Error updating');
+            error: function() {
+                showToast('error', 'Server error.');
+            }
+        });
+    });
+
+    // Edit Product Button
+    $(document).on('click', '.edit-btn', function() {
+        var id = $(this).data('id');
+        $('#productModalLabel').text('Edit Product');
+        $.ajax({
+            url: baseUrl + 'products/' + id + '/edit',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#productModalBody').html(response.html);
+                    $('#productModal').modal('show');
+                } else {
+                    showToast('error', response.message || 'Failed to load product.');
+                }
+            },
+            error: function() {
+                showToast('error', 'Server error.');
+            }
+        });
+    });
+
+    // Restock Button
+    $(document).on('click', '.restock-btn', function() {
+        var id = $(this).data('id');
+        $.ajax({
+            url: baseUrl + 'products/' + id + '/restock',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#restockModalBody').html(response.html);
+                    $('#restockModal').modal('show');
+                }
+            },
+            error: function() {
+                showToast('error', 'Failed to load restock form.');
+            }
+        });
+    });
+
+    // Submit Product Form (Add/Edit) via AJAX
+    $(document).on('submit', '#productForm', function(e) {
+        e.preventDefault();
+        var form = $(this);
+        var url = form.attr('action');
+        var method = form.find('input[name="_method"]').val() || 'POST';
+
+        $.ajax({
+            url: url,
+            type: method,
+            data: form.serialize(),
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#productModal').modal('hide');
+                    showToast('success', response.message || 'Product saved successfully!');
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    if (response.errors) {
+                        $.each(response.errors, function(key, value) {
+                            $('#' + key + '_error').text(value);
+                        });
+                    } else {
+                        showToast('error', response.message || 'Failed to save.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                showToast('error', 'Server error occurred.');
                 console.error(xhr.responseText);
             }
         });
     });
-});
 
-$(document).on('click', '.deleteUserBtn', function () {
-    const userId = $(this).data('id');
-    const csrfName = $('meta[name="csrf-name"]').attr('content');
-    const csrfToken = $('meta[name="csrf-token"]').attr('content');
-
-    if (confirm('Are you sure you want to delete this user?')) {
+    // Submit Restock Form
+    $(document).on('submit', '#restockForm', function(e) {
+        e.preventDefault();
+        var form = $(this);
         $.ajax({
-            url: baseUrl + 'products/delete/' + userId,
-            method: 'POST', 
-            data: {
-                _method: 'DELETE',
-                [csrfName]: csrfToken
-            },
-            success: function (response) {
-                if (response.success) {
-                    showToast('success', 'Users deleted successfully.');
-                    setTimeout(() => location.reload(), 1000);
+            url: form.attr('action'),
+            type: 'POST',
+            data: form.serialize(),
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#restockModal').modal('hide');
+                    showToast('success', response.message || 'Stock updated!');
+                    setTimeout(function() { location.reload(); }, 1000);
                 } else {
-                    alert(response.message || 'Failed to delete.');
+                    showToast('error', response.message || 'Restock failed.');
                 }
             },
-            error: function () {
-                alert('Something went wrong while deleting.');
+            error: function() {
+                showToast('error', 'Server error.');
             }
         });
+    });
+
+    // Delete Product (confirmation handled by link class)
+    $(document).on('click', '.delete-btn', function(e) {
+        if (!confirm('Are you sure you want to delete this product?')) {
+            e.preventDefault();
+        }
+    });
+
+    // Load product count on dashboard
+    if ($('#productCount').length) {
+        loadProductCount();
     }
 });
 
-$(document).ready(function () {
-    const $table = $('#example1');
-
-    const csrfName = 'csrf_test_name'; 
-    const csrfToken = $('input[name="' + csrfName + '"]').val();
-
-    $table.DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: baseUrl + 'products/fetchRecords',
-            type: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken
-            }
-        },
-        columns: [
-        { data: 'row_number' },
-        { data: 'id', visible: false },
-        { data: 'name' },
-        { data: 'price' },
-        { data: 'stock' },
-        { data: 'category' },
-        {
-            data: null,
-            orderable: false,
-            searchable: false,
-            render: function (data, type, row) {
-                return `
-                <button class="btn btn-sm btn-warning edit-btn" data-id="${row.id}">
-                <i class="far fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-danger deleteUserBtn" data-id="${row.id}">
-                <i class="fas fa-trash-alt"></i>
-                </button>
-                `;
-            }
-        }
-        ],
-        responsive: true,
-        autoWidth: false
-    });
-});
-
+// Product count function (called on dashboard)
 function loadProductCount() {
-    var url = '<?= base_url("Products/getCount") ?>';
-    console.log('Fetching from URL:', url);
-    
     $.ajax({
-        url: url,
+        url: baseUrl + 'products/getCount',
         type: 'GET',
         dataType: 'json',
         success: function(response) {
-            console.log('Success response:', response);
-            if(response.count !== undefined) {
+            if (response.count !== undefined) {
                 $('#productCount').text(response.count);
             } else {
                 $('#productCount').text('0');
-                console.error('Count not found in response');
             }
         },
-        error: function(xhr, status, error) {
-            console.error('AJAX Error Details:');
-            console.error('Status:', status);
-            console.error('Error:', error);
-            console.error('Response Text:', xhr.responseText);
-            console.error('Status Code:', xhr.status);
-            $('#productCount').text('Error: ' + xhr.status);
+        error: function(xhr) {
+            $('#productCount').text('Error');
+            console.error('Failed to load product count:', xhr.status);
         }
     });
 }
