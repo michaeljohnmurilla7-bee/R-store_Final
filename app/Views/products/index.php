@@ -6,7 +6,7 @@
     <div class="container-fluid">
       <div class="row mb-2">
         <div class="col-sm-6">
-          <h1 class="m-0">Admin Management</h1>
+          <h1 class="m-0">Products</h1>
         </div>
         <div class="col-sm-6">
           <ol class="breadcrumb float-sm-right">
@@ -24,7 +24,7 @@
         <div class="col-12">
           <div class="card">
             <div class="card-header">
-              <h2 class="card-title">Admin Account</h2>
+              <h3 class="card-title">List of Products</h3>
               <div class="float-right">
                 <button type="button" class="btn btn-md btn-primary" data-toggle="modal" data-target="#AddNewModal">
                   <i class="fa fa-plus-circle fa fw"></i> Add New
@@ -38,11 +38,8 @@
                     <th>No.</th>
                     <th style="display:none;">id</th>
                     <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Phone</th>
-                    <th>Created At</th>
+                    <th>Price</th>
+                    <th>Stock</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -73,41 +70,19 @@
               </div>
 
               <div class="form-group">
-                <label>Email</label>
-                <input type="email" name="email" class="form-control" required />
+                <label>Price</label>
+                <input type="text" name="price" class="form-control" required />
               </div>
+
               <div class="form-group">
-                <label>Password</label>
-                <input type="password" name="password" class="form-control" required />
+                <label>Stock</label>
+                <input type="text" name="stock" class="form-control" required />
               </div>
 
-              <div class="row">
-                <div class="col-sm-6">
-                  <div class="form-group">
-                    <label>Role</label>
-                    <select class="form-control" name="role">
-                      <option value="Admin">Admin</option>
-                      <option value="User">User</option>
-                      <option value="Guest">Guest</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="col-sm-6">
-                 <div class="form-group">
-                  <label>Status</label>
-                  <select class="form-control" name="status">
-                    <option value="Active">Active</option>
-                    <option value="In Active">In Active</option>
-                  </select>
-                </div>
+              <div class="form-group">
+                <label>Category</label>
+                <input type="text" name="category" class="form-control" required />
               </div>
-            </div>
-
-            <div class="form-group">
-              <label>Phone Number</label>
-              <input type="text" name="phone" class="form-control" required />
-            </div>
           </div>
 
           <div class="modal-footer">
@@ -140,43 +115,20 @@
               </div>
 
             <div class="form-group">
-              <label for="email">Email</label>
-              <input type="email" class="form-control" id="email" name="email" required>
+              <label for="email">Price</label>
+              <input type="text" class="form-control" id="price" name="price" required>
             </div>
 
             <div class="form-group">
-              <label for="password">Password</label>
-              <input type="password" class="form-control" id="password" name="password">
+              <label for="password">Stock</label>
+              <input type="text" class="form-control" id="stock" name="stock">
             </div>  
 
-             <div class="row">
-                <div class="col-sm-6">
-                  <div class="form-group">
-                    <label>Role</label>
-                    <select class="form-control" name="role" id="role">
-                      <option value="Admin">Admin</option>
-                      <option value="User">User</option>
-                      <option value="Guest">Guest</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="col-sm-6">
-                 <div class="form-group">
-                  <label>Status</label>
-                  <select class="form-control" name="status" id="status">
-                    <option value="Active">Active</option>
-                    <option value="In Active">In Active</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
             <div class="form-group">
-              <label>Phone Number</label>
-              <input type="text" name="phone" id="phone" class="form-control" required />
-            </div>        
-
+              <label for="password">Category</label>
+              <input type="text" class="form-control" id="category" name="category">
+            </div>
+            
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class='fas fa-times-circle'></i> Cancel</button>
@@ -191,8 +143,7 @@
 <div class="toasts-top-right fixed" style="position: fixed; top: 1rem; right: 1rem; z-index: 9999;"></div>
 <?= $this->endSection() ?>
 
-
 <?= $this->section('scripts') ?>
 <script> const baseUrl = "<?= base_url() ?>"; </script>
-<script src="<?= base_url('js/users/users.js') ?>"></script>
+<script src="<?= base_url('js/products/products.js') ?>"></script>
 <?= $this->endSection() ?>

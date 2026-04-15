@@ -12,8 +12,17 @@ $routes->post('/auth', 'Auth::auth');
 $routes->get('/dashboard', 'Dashboard::index');
 $routes->get('/logout', 'Auth::logout');
 
-// User Acounts routes
 
+// Products routes
+$routes->get('/products', 'Products::index');
+$routes->post('products/save', 'Products::save');
+$routes->get('products/edit/(:segment)', 'Products::edit/$1');
+$routes->post('products/update', 'Products::update');
+$routes->delete('products/delete/(:num)', 'Products::delete/$1');
+$routes->post('products/fetchRecords', 'Products::fetchRecords');
+$routes->get('products/getCount', 'Products::getCount');
+
+// User Acounts routes
 $routes->get('/users', 'Users::index');
 $routes->post('users/save', 'Users::save');
 $routes->get('users/edit/(:segment)', 'Users::edit/$1');

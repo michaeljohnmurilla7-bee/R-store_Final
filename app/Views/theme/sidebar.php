@@ -76,7 +76,7 @@ body.dark-mode .main-sidebar .nav-link:hover {
          alt="AdminLTE Logo" 
          class="brand-image img-circle elevation-3" 
          style="opacity: .8">
-    <span class="brand-text font-weight-light" style="color: white">SMART BMIS</span>
+    <span class="brand-text font-weight-light" style="color: white"><B><H5>STORE MANAGEMENT</H5></B></span>
 </div>
   <div class="sidebar">
     <nav class="mt-2">
@@ -87,7 +87,13 @@ body.dark-mode .main-sidebar .nav-link:hover {
          <p>Dashboard</p>
        </a>
      </li>
-      <li class="nav-item">
+     <li class="nav-item">
+      <a href="<?= base_url('products') ?>" class="nav-link <?= is_active(1, 'products') ?>">
+        <i class="nav-icon fas fa-boxes"></i>
+        <p>Products</p>
+      </a>
+     </li>
+    <li class="nav-item">
       <a href="<?= base_url('log') ?>" class="nav-link <?= is_active(1, 'log') ?>">
         <i class="nav-icon fas fa-history"></i>
         <p>Activity Logs</p>
@@ -96,7 +102,7 @@ body.dark-mode .main-sidebar .nav-link:hover {
      <li class="nav-item">
       <a href="<?= base_url('users') ?>" class="nav-link <?= is_active(1, 'users') ?>">
         <i class="nav-icon fas fa-user-lock"></i>
-        <p>User Accounts</p>
+        <p>Admin Profile</p>
       </a>
     </li>
   </ul>

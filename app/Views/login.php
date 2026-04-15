@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BMIS | Log in</title>
+  <title>Log in</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
   <link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/fontawesome-free/css/all.min.css') ?>">
   <link rel="stylesheet" href="<?= base_url('assets/adminlte/plugins/icheck-bootstrap/icheck-bootstrap.min.css') ?>">
@@ -15,7 +15,7 @@
     <div class="card-body login-card-body">
       <p class="login-box-msg">
         <img src="<?= base_url('assets/img/pasig.jpeg') ?>" width="30%">
-        <br>Sign in to start your session
+        <br>Sign in to manage your Store
       </p>
 
       <?php $lockoutTime = $lockout ?? 0; ?>

@@ -14,7 +14,7 @@ services:
     container_name: ci_db
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: crud_db
+      MYSQL_DATABASE: inventory
       MYSQL_USER: phpmyadmin
       MYSQL_PASSWORD: 1234
     ports:
