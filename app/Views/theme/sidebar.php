@@ -66,12 +66,6 @@
                 <p>List Categories</p>
               </a>
             </li>
-            <li class="nav-item">
-              <a href="<?= base_url('categories/create') ?>" class="nav-link">
-                <i class="fas fa-plus-circle nav-icon"></i>
-                <p>Add Category</p>
-              </a>
-            </li>
           </ul>
         </li>
 

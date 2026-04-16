@@ -1,25 +1,16 @@
-// products.js - Compatible with rStore Products Module
+// products.js - Updated to work with Suppliers module
 
 // Toastr notification helper
-// Ensure Bootstrap modal is properly initialized
-$(document).ready(function() {
-    // Test if modal works
-    console.log('jQuery version:', $.fn.jquery);
-    console.log('Bootstrap modal available:', typeof $.fn.modal !== 'undefined');
-    
-    // Manual modal trigger to avoid data-toggle issues
-    $('#addNewProductBtn').on('click', function(e) {
-        e.preventDefault();
-        $('#AddNewModal').modal('show');
-    });
-});
-
 function showToast(type, message) {
     if (typeof toastr !== 'undefined') {
         if (type === 'success') {
             toastr.success(message, 'Success');
-        } else {
+        } else if (type === 'error') {
             toastr.error(message, 'Error');
+        } else if (type === 'warning') {
+            toastr.warning(message, 'Warning');
+        } else {
+            toastr.info(message, 'Info');
         }
     } else {
         alert(message);
@@ -27,142 +18,434 @@ function showToast(type, message) {
 }
 
 $(document).ready(function() {
-    // Initialize DataTable (client-side)
-    $('#productsTable').DataTable({
+    // Test if modal works
+    console.log('jQuery version:', $.fn.jquery);
+    console.log('Bootstrap modal available:', typeof $.fn.modal !== 'undefined');
+    
+    // Load categories and suppliers for dropdowns
+    loadCategoriesAndSuppliers();
+    
+    // Initialize DataTable
+    var dataTable = $('#example1').DataTable({
         "responsive": true,
         "lengthChange": true,
         "autoWidth": false,
-        "order": [[1, 'asc']]
-    });
-
-    // Add Product Button
-    $('#addProductBtn').click(function() {
-        $('#productModalLabel').text('Add New Product');
-        $.ajax({
-            url: baseUrl + 'products/create',
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    $('#productModalBody').html(response.html);
-                    $('#productModal').modal('show');
+        "processing": true,
+        "serverSide": false,
+        "ajax": {
+            "url": baseUrl + 'products/getSuppliersData', // You'll need to create this endpoint
+            "type": "GET",
+            "dataType": "json",
+            "dataSrc": function(json) {
+                if (json.status === 'success') {
+                    return json.data;
                 } else {
-                    showToast('error', 'Failed to load form.');
+                    showToast('error', 'Failed to load products data');
+                    return [];
                 }
             },
-            error: function() {
-                showToast('error', 'Server error.');
+            "error": function(xhr, status, error) {
+                console.error('DataTable AJAX Error:', error);
+                showToast('error', 'Failed to load products');
+                return [];
             }
-        });
-    });
-
-    // Edit Product Button
-    $(document).on('click', '.edit-btn', function() {
-        var id = $(this).data('id');
-        $('#productModalLabel').text('Edit Product');
-        $.ajax({
-            url: baseUrl + 'products/' + id + '/edit',
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    $('#productModalBody').html(response.html);
-                    $('#productModal').modal('show');
-                } else {
-                    showToast('error', response.message || 'Failed to load product.');
+        },
+        "columns": [
+            { 
+                "data": null,
+                "render": function(data, type, row, meta) {
+                    return meta.row + 1;
                 }
             },
-            error: function() {
-                showToast('error', 'Server error.');
-            }
-        });
-    });
-
-    // Restock Button
-    $(document).on('click', '.restock-btn', function() {
-        var id = $(this).data('id');
-        $.ajax({
-            url: baseUrl + 'products/' + id + '/restock',
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    $('#restockModalBody').html(response.html);
-                    $('#restockModal').modal('show');
+            { "data": "id", "visible": false },
+            { "data": "name" },
+            { "data": "sku" },
+            { "data": "category_name", "defaultContent": "-" },
+            { "data": "supplier_name", "defaultContent": "-" },
+            { 
+                "data": "cost_price",
+                "render": function(data) {
+                    return data ? '$' + parseFloat(data).toFixed(2) : '$0.00';
                 }
             },
-            error: function() {
-                showToast('error', 'Failed to load restock form.');
-            }
-        });
-    });
-
-    // Submit Product Form (Add/Edit) via AJAX
-    $(document).on('submit', '#productForm', function(e) {
-        e.preventDefault();
-        var form = $(this);
-        var url = form.attr('action');
-        var method = form.find('input[name="_method"]').val() || 'POST';
-
-        $.ajax({
-            url: url,
-            type: method,
-            data: form.serialize(),
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    $('#productModal').modal('hide');
-                    showToast('success', response.message || 'Product saved successfully!');
-                    setTimeout(function() { location.reload(); }, 1000);
-                } else {
-                    if (response.errors) {
-                        $.each(response.errors, function(key, value) {
-                            $('#' + key + '_error').text(value);
-                        });
+            { 
+                "data": "price",
+                "render": function(data) {
+                    return '$' + parseFloat(data).toFixed(2);
+                }
+            },
+            { "data": "stock_qty" },
+            { "data": "reorder_level" },
+            { 
+                "data": "is_active",
+                "render": function(data) {
+                    if (data == 1) {
+                        return '<span class="badge badge-success">Active</span>';
                     } else {
-                        showToast('error', response.message || 'Failed to save.');
+                        return '<span class="badge badge-danger">Inactive</span>';
                     }
                 }
             },
-            error: function(xhr) {
-                showToast('error', 'Server error occurred.');
-                console.error(xhr.responseText);
+            {
+                "data": null,
+                "render": function(data) {
+                    return `
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-info view-product" data-id="${data.id}" title="View">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                            <button class="btn btn-warning edit-product" data-id="${data.id}" title="Edit">
+                                <i class="fa fa-edit"></i>
+                            </button>
+                            <button class="btn btn-success adjust-stock" data-id="${data.id}" data-name="${data.name}" title="Adjust Stock">
+                                <i class="fa fa-exchange-alt"></i>
+                            </button>
+                            <button class="btn btn-danger delete-product" data-id="${data.id}" title="Delete">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                }
             }
-        });
+        ],
+        "order": [[1, 'asc']],
+        "language": {
+            "emptyTable": "No products found",
+            "zeroRecords": "No matching products found"
+        }
     });
 
-    // Submit Restock Form
-    $(document).on('submit', '#restockForm', function(e) {
+    // Function to load categories and suppliers for dropdowns
+    function loadCategoriesAndSuppliers() {
+        // Load categories
+        $.ajax({
+            url: baseUrl + 'categories/getSelectList',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response && response.length > 0) {
+                    // Populate add modal category dropdown
+                    var addCategorySelect = $('#AddNewModal select[name="category_id"]');
+                    addCategorySelect.empty();
+                    addCategorySelect.append('<option value="">Select Category</option>');
+                    $.each(response, function(key, category) {
+                        addCategorySelect.append('<option value="' + category.id + '">' + category.text + '</option>');
+                    });
+                    
+                    // Populate edit modal category dropdown
+                    var editCategorySelect = $('#editProductModal select[name="category_id"]');
+                    editCategorySelect.empty();
+                    editCategorySelect.append('<option value="">Select Category</option>');
+                    $.each(response, function(key, category) {
+                        editCategorySelect.append('<option value="' + category.id + '">' + category.text + '</option>');
+                    });
+                }
+            },
+            error: function(xhr) {
+                console.error('Failed to load categories:', xhr);
+            }
+        });
+        
+        // Load suppliers
+        $.ajax({
+            url: baseUrl + 'suppliers/getSelectList',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response && response.length > 0) {
+                    // Populate add modal supplier dropdown
+                    var addSupplierSelect = $('#AddNewModal select[name="supplier_id"]');
+                    addSupplierSelect.empty();
+                    addSupplierSelect.append('<option value="">Select Supplier</option>');
+                    $.each(response, function(key, supplier) {
+                        addSupplierSelect.append('<option value="' + supplier.id + '">' + supplier.text + '</option>');
+                    });
+                    
+                    // Populate edit modal supplier dropdown
+                    var editSupplierSelect = $('#editProductModal select[name="supplier_id"]');
+                    editSupplierSelect.empty();
+                    editSupplierSelect.append('<option value="">Select Supplier</option>');
+                    $.each(response, function(key, supplier) {
+                        editSupplierSelect.append('<option value="' + supplier.id + '">' + supplier.text + '</option>');
+                    });
+                } else {
+                    // If no suppliers, show message
+                    $('#AddNewModal select[name="supplier_id"]').html('<option value="">No suppliers available. Please add suppliers first.</option>');
+                    $('#editProductModal select[name="supplier_id"]').html('<option value="">No suppliers available. Please add suppliers first.</option>');
+                }
+            },
+            error: function(xhr) {
+                console.error('Failed to load suppliers:', xhr);
+                $('#AddNewModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
+                $('#editProductModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
+            }
+        });
+    }
+
+    // Add New Product Button
+    $('#addNewProductBtn').on('click', function(e) {
+        e.preventDefault();
+        $('#addProductForm')[0].reset();
+        // Refresh dropdowns
+        loadCategoriesAndSuppliers();
+        $('#AddNewModal').modal('show');
+    });
+
+    // Submit Add Product Form
+    $('#addProductForm').on('submit', function(e) {
         e.preventDefault();
         var form = $(this);
+        var submitBtn = form.find('button[type="submit"]');
+        var originalText = submitBtn.html();
+        
+        // Disable button and show loading
+        submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+        
         $.ajax({
-            url: form.attr('action'),
+            url: baseUrl + 'products/store',
             type: 'POST',
             data: form.serialize(),
             dataType: 'json',
             success: function(response) {
                 if (response.status === 'success') {
-                    $('#restockModal').modal('hide');
-                    showToast('success', response.message || 'Stock updated!');
-                    setTimeout(function() { location.reload(); }, 1000);
+                    $('#AddNewModal').modal('hide');
+                    showToast('success', response.message || 'Product added successfully!');
+                    dataTable.ajax.reload(null, false); // Reload table data
+                    form[0].reset(); // Reset form
                 } else {
-                    showToast('error', response.message || 'Restock failed.');
+                    if (response.errors) {
+                        // Display validation errors
+                        $.each(response.errors, function(key, value) {
+                            var input = form.find('[name="' + key + '"]');
+                            input.addClass('is-invalid');
+                            input.after('<div class="invalid-feedback">' + value + '</div>');
+                        });
+                        showToast('error', 'Please fix the form errors');
+                    } else {
+                        showToast('error', response.message || 'Failed to add product.');
+                    }
                 }
             },
-            error: function() {
-                showToast('error', 'Server error.');
+            error: function(xhr) {
+                console.error('AJAX Error:', xhr.responseText);
+                showToast('error', 'Server error occurred. Please try again.');
+            },
+            complete: function() {
+                // Re-enable button and restore text
+                submitBtn.prop('disabled', false).html(originalText);
             }
         });
     });
 
-    // Delete Product (confirmation handled by link class)
-    $(document).on('click', '.delete-btn', function(e) {
-        if (!confirm('Are you sure you want to delete this product?')) {
-            e.preventDefault();
+    // View Product
+    $(document).on('click', '.view-product', function() {
+        var id = $(this).data('id');
+        
+        $.ajax({
+            url: baseUrl + 'products/getProduct/' + id,
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    var product = response.data;
+                    
+                    // Populate view modal
+                    $('#view_name').text(product.name || '-');
+                    $('#view_sku').text(product.sku || '-');
+                    $('#view_category').text(product.category_name || '-');
+                    $('#view_supplier').text(product.supplier_name || '-');
+                    $('#view_cost_price').text(product.cost_price ? '$' + parseFloat(product.cost_price).toFixed(2) : '$0.00');
+                    $('#view_price').text(product.price ? '$' + parseFloat(product.price).toFixed(2) : '$0.00');
+                    $('#view_stock_qty').text(product.stock_qty || '0');
+                    $('#view_reorder_level').text(product.reorder_level || '0');
+                    $('#view_status').html(product.is_active == 1 ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>');
+                    $('#view_created_at').text(product.created_at ? new Date(product.created_at).toLocaleString() : '-');
+                    $('#view_updated_at').text(product.updated_at ? new Date(product.updated_at).toLocaleString() : '-');
+                    $('#view_description').text(product.description || '-');
+                    
+                    $('#viewProductModal').modal('show');
+                } else {
+                    showToast('error', response.message || 'Failed to load product details');
+                }
+            },
+            error: function(xhr) {
+                console.error('AJAX Error:', xhr.responseText);
+                showToast('error', 'Server error occurred');
+            }
+        });
+    });
+
+    // Edit Product - Load data into edit modal
+    $(document).on('click', '.edit-product', function() {
+        var id = $(this).data('id');
+        
+        $.ajax({
+            url: baseUrl + 'products/getProduct/' + id,
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    var product = response.data;
+                    
+                    // Populate edit modal
+                    $('#productId').val(product.id);
+                    $('#name').val(product.name);
+                    $('#sku').val(product.sku);
+                    $('#category_id').val(product.category_id);
+                    $('#supplier_id').val(product.supplier_id);
+                    $('#cost_price').val(product.cost_price || '0.00');
+                    $('#price').val(product.price);
+                    $('#stock_qty').val(product.stock_qty || '0');
+                    $('#reorder_level').val(product.reorder_level || '0');
+                    $('#is_active').val(product.is_active);
+                    $('#description').val(product.description || '');
+                    
+                    $('#editProductModal').modal('show');
+                } else {
+                    showToast('error', response.message || 'Failed to load product data');
+                }
+            },
+            error: function(xhr) {
+                console.error('AJAX Error:', xhr.responseText);
+                showToast('error', 'Server error occurred');
+            }
+        });
+    });
+
+    // Submit Edit Product Form
+    $('#editProductForm').on('submit', function(e) {
+        e.preventDefault();
+        var id = $('#productId').val();
+        var form = $(this);
+        var submitBtn = form.find('button[type="submit"]');
+        var originalText = submitBtn.html();
+        
+        // Disable button and show loading
+        submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Updating...');
+        
+        $.ajax({
+            url: baseUrl + 'products/update/' + id,
+            type: 'POST',
+            data: form.serialize(),
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#editProductModal').modal('hide');
+                    showToast('success', response.message || 'Product updated successfully!');
+                    dataTable.ajax.reload(null, false); // Reload table data
+                } else {
+                    if (response.errors) {
+                        // Display validation errors
+                        $.each(response.errors, function(key, value) {
+                            var input = form.find('[name="' + key + '"]');
+                            input.addClass('is-invalid');
+                            input.after('<div class="invalid-feedback">' + value + '</div>');
+                        });
+                        showToast('error', 'Please fix the form errors');
+                    } else {
+                        showToast('error', response.message || 'Failed to update product.');
+                    }
+                }
+            },
+            error: function(xhr) {
+                console.error('AJAX Error:', xhr.responseText);
+                showToast('error', 'Server error occurred. Please try again.');
+            },
+            complete: function() {
+                // Re-enable button and restore text
+                submitBtn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+
+    // Stock Adjustment
+    $(document).on('click', '.adjust-stock', function() {
+        var id = $(this).data('id');
+        var name = $(this).data('name');
+        
+        $('#adjust_product_id').val(id);
+        $('#adjust_product_name').val(name);
+        $('#stockAdjustmentForm')[0].reset();
+        $('#stockAdjustmentModal').modal('show');
+    });
+
+    // Submit Stock Adjustment Form
+    $('#stockAdjustmentForm').on('submit', function(e) {
+        e.preventDefault();
+        var productId = $('#adjust_product_id').val();
+        var form = $(this);
+        var submitBtn = form.find('button[type="submit"]');
+        var originalText = submitBtn.html();
+        
+        // Disable button and show loading
+        submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Processing...');
+        
+        $.ajax({
+            url: baseUrl + 'products/restock/' + productId,
+            type: 'POST',
+            data: form.serialize(),
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#stockAdjustmentModal').modal('hide');
+                    showToast('success', response.message || 'Stock adjusted successfully!');
+                    dataTable.ajax.reload(null, false); // Reload table data
+                } else {
+                    showToast('error', response.message || 'Failed to adjust stock.');
+                }
+            },
+            error: function(xhr) {
+                console.error('AJAX Error:', xhr.responseText);
+                showToast('error', 'Server error occurred. Please try again.');
+            },
+            complete: function() {
+                // Re-enable button and restore text
+                submitBtn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+
+    // Delete Product
+    $(document).on('click', '.delete-product', function() {
+        var id = $(this).data('id');
+        var productName = $(this).closest('tr').find('td:eq(2)').text(); // Get product name from table
+        
+        if (confirm('Are you sure you want to delete product "' + productName + '"? This action cannot be undone.')) {
+            $.ajax({
+                url: baseUrl + 'products/delete/' + id,
+                type: 'DELETE',
+                data: {
+                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        showToast('success', response.message || 'Product deleted successfully!');
+                        dataTable.ajax.reload(null, false); // Reload table data
+                    } else {
+                        showToast('error', response.message || 'Failed to delete product.');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('AJAX Error:', xhr.responseText);
+                    showToast('error', 'Server error occurred. Please try again.');
+                }
+            });
         }
     });
 
-    // Load product count on dashboard
+    // Clear form errors when modals are closed
+    $('#AddNewModal').on('hidden.bs.modal', function() {
+        $('#addProductForm .is-invalid').removeClass('is-invalid');
+        $('#addProductForm .invalid-feedback').remove();
+    });
+    
+    $('#editProductModal').on('hidden.bs.modal', function() {
+        $('#editProductForm .is-invalid').removeClass('is-invalid');
+        $('#editProductForm .invalid-feedback').remove();
+    });
+
+    // Load product count on dashboard (if element exists)
     if ($('#productCount').length) {
         loadProductCount();
     }
