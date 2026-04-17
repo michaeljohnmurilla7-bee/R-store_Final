@@ -85,23 +85,22 @@ class Categories extends BaseController
     // --------------------------------------------------------------------
     // Get categories for dropdown/select inputs
     // --------------------------------------------------------------------
-    public function getSelectList()
-    {
-        $categories = $this->categoryModel->where('is_active', 1)
-                                         ->orderBy('name', 'ASC')
-                                         ->findAll();
-        
-        $options = [];
-        foreach ($categories as $category) {
-            $options[] = [
-                'id' => $category['id'],
-                'text' => $category['name']
-            ];
-        }
-        
-        return $this->response->setJSON($options);
+    // Add this method to your Categories.php controller
+public function getSelectList()
+{
+    $categoryModel = new \App\Models\CategoryModel();
+    $categories = $categoryModel->orderBy('name', 'ASC')->findAll();
+    $selectList = [];
+    
+    foreach ($categories as $category) {
+        $selectList[] = [
+            'id' => $category['id'],
+            'text' => $category['name']
+        ];
     }
-
+    
+    return $this->response->setJSON($selectList);
+}
     // --------------------------------------------------------------------
     // Check if category has products (before deletion)
     // --------------------------------------------------------------------

@@ -72,7 +72,11 @@ $routes->group('categories', function($routes) {
     $routes->get('(:num)/edit', 'Categories::edit/$1');
     $routes->post('update/(:num)', 'Categories::update/$1');
     $routes->delete('delete/(:num)', 'Categories::delete/$1');
-    $routes->get('delete/(:num)', 'Categories::delete/$1'); // Legacy
+    $routes->get('delete/(:num)', 'Categories::delete/$1'); 
+    // Add these routes for the dropdown endpoints
+$routes->get('categories/getSelectList', 'Categories::getSelectList');
+$routes->get('suppliers/getSelectList', 'Suppliers::getSelectList');
+    // Legacy
 });
 
 // ===========================================================================

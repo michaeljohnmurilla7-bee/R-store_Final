@@ -100,4 +100,22 @@ class CategoryModel extends Model
                     ->orderBy('name', 'ASC')
                     ->findAll();
     }
+
+    // Add this method to CategoryModel
+public function getSelectList()
+{
+    $categories = $this->orderBy('name', 'ASC')->findAll();
+    $selectList = [];
+    
+    foreach ($categories as $category) {
+        $selectList[] = [
+            'id' => $category['id'],
+            'text' => $category['name']
+        ];
+    }
+    
+    return $selectList;
+}
+
+    
 }

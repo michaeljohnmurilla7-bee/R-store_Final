@@ -24,8 +24,8 @@
         <div class="col-lg-3 col-6">
           <div class="small-box bg-info">
             <div class="inner">
-              <h3>Delata</h3>
-              <p>Category</p>
+              <h3>Suppliers</h3>
+              <p>All Suppliers</p>
             </div>
             <div class="icon">
               <i class="ion ion-bag"></i>
@@ -36,13 +36,13 @@
         <div class="col-lg-3 col-6">
           <div class="small-box bg-success">
             <div class="inner">
-              <h3>Noodles</h3>
-              <p>Category</p>
+              <h3>Categories</h3>
+              <p>All Categories</p>
             </div>
             <div class="icon">
               <i class="ion ion-stats-bars"></i>
             </div>
-            <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+            <a href= "<?= base_url('categories') ?>" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
           </div>
         </div>
         <div class="col-lg-3 col-6">
@@ -60,8 +60,8 @@
         <div class="col-lg-3 col-6">
           <div class="small-box bg-danger">
             <div class="inner">
-              <h3>Hygiene</h3>
-              <p>Category</p>
+              <h3>Sales Order</h3>
+              <p>Sales Order</p>
             </div>
             <div class="icon">
               <i class="ion ion-pie-graph"></i>

@@ -258,18 +258,20 @@ class Suppliers extends BaseController
     // --------------------------------------------------------------------
     // Get suppliers for dropdown/select inputs
     // --------------------------------------------------------------------
-    public function getSelectList()
-    {
-        $suppliers = $this->supplierModel->where('is_active', 1)->orderBy('name', 'ASC')->findAll();
-        
-        $options = [];
-        foreach ($suppliers as $supplier) {
-            $options[] = [
-                'id' => $supplier['id'],
-                'text' => $supplier['name']
-            ];
-        }
-        
-        return $this->response->setJSON($options);
+   // Add this method to your Suppliers.php controller
+public function getSelectList()
+{
+    $supplierModel = new \App\Models\SupplierModel();
+    $suppliers = $supplierModel->orderBy('name', 'ASC')->findAll();
+    $selectList = [];
+    
+    foreach ($suppliers as $supplier) {
+        $selectList[] = [
+            'id' => $supplier['id'],
+            'text' => $supplier['name']
+        ];
     }
+    
+    return $this->response->setJSON($selectList);
+}
 }
