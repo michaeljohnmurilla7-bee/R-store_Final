@@ -5,7 +5,7 @@
   <meta name="csrf-token" content="<?= csrf_hash() ?>">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RStore — Dashboard</title>
+  <title>RStore — Dashboard | Green Theme</title>
 
   <!-- Fonts -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap">
@@ -30,13 +30,14 @@
 
   <style>
     /* =====================================================
-       RSTORE — Global Design System
+       RSTORE — GREEN DESIGN SYSTEM (matching Login Profile)
        ===================================================== */
     :root {
-      --rs-orange:        #f59e0b;
-      --rs-orange-dark:   #d97706;
-      --rs-orange-light:  rgba(245, 158, 11, 0.12);
-      --rs-orange-glow:   rgba(245, 158, 11, 0.25);
+      --rs-green:        #1a5f4b;
+      --rs-green-dark:   #0e3d30;
+      --rs-green-light:  rgba(26, 95, 75, 0.12);
+      --rs-green-glow:   rgba(26, 95, 75, 0.25);
+      --rs-green-bright: #2c8b70;
       --rs-sidebar-bg:    #ffffff;
       --rs-sidebar-width: 250px;
       --rs-nav-header:    #9ca3af;
@@ -74,11 +75,11 @@
     }
 
     /* =====================================================
-       NAVBAR
+       NAVBAR - GREEN GRADIENT (replaced orange)
        ===================================================== */
     .main-header.navbar-warning {
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
-      box-shadow: 0 2px 8px rgba(245,158,11,.35) !important;
+      background: linear-gradient(135deg, #1a5f4b 0%, #0e3d30 100%) !important;
+      box-shadow: 0 2px 8px rgba(26, 95, 75, 0.35) !important;
       border-bottom: none !important;
     }
 
@@ -123,7 +124,7 @@
     .rstore-user-btn:hover {
       background: rgba(255,255,255,.15) !important;
     }
-    .rstore-user-btn::after { display: none; } /* hide default caret */
+    .rstore-user-btn::after { display: none; }
 
     .rstore-avatar {
       width: 30px;
@@ -175,7 +176,7 @@
       width: 36px;
       height: 36px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #f59e0b, #d97706);
+      background: linear-gradient(135deg, #1a5f4b, #0e3d30);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -216,8 +217,8 @@
     body.dark-mode .rstore-dropdown .dropdown-item { color: #d1d5db; }
 
     .rstore-dropdown .dropdown-item:hover {
-      background: var(--rs-orange-light);
-      color: var(--rs-orange-dark);
+      background: var(--rs-green-light);
+      color: var(--rs-green-dark);
     }
 
     .rstore-logout:hover {
@@ -226,7 +227,7 @@
     }
 
     /* =====================================================
-       SIDEBAR
+       SIDEBAR - CLEAN WHITE / DARK SUPPORT
        ===================================================== */
     #mainSidebar {
       background: var(--rs-sidebar-bg) !important;
@@ -239,13 +240,13 @@
       border-right-color: #1f2937 !important;
     }
 
-    /* Brand */
+    /* Brand - Green Gradient */
     .rstore-brand {
       display: flex !important;
       align-items: center;
       gap: 10px;
       padding: 14px 16px !important;
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+      background: linear-gradient(135deg, #1a5f4b 0%, #0e3d30 100%) !important;
       border-bottom: none !important;
       text-decoration: none !important;
     }
@@ -293,7 +294,7 @@
       width: 34px;
       height: 34px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #f59e0b, #d97706);
+      background: linear-gradient(135deg, #1a5f4b, #0e3d30);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -372,47 +373,47 @@
 
     body.dark-mode .rstore-nav .nav-link .nav-icon { color: #6b7280 !important; }
 
-    /* Hover */
+    /* Hover - Green */
     .rstore-nav .nav-link:hover {
-      background: var(--rs-orange-light) !important;
-      color: var(--rs-orange-dark) !important;
+      background: var(--rs-green-light) !important;
+      color: var(--rs-green-dark) !important;
     }
 
     .rstore-nav .nav-link:hover .nav-icon {
-      color: var(--rs-orange) !important;
+      color: var(--rs-green) !important;
       transform: translateX(2px);
     }
 
-    /* Active */
+    /* Active - Green */
     .rstore-nav .nav-link.active {
-      background: var(--rs-orange-light) !important;
-      color: var(--rs-orange-dark) !important;
+      background: var(--rs-green-light) !important;
+      color: var(--rs-green-dark) !important;
       font-weight: 600 !important;
     }
 
     .rstore-nav .nav-link.active .nav-icon {
-      color: var(--rs-orange) !important;
+      color: var(--rs-green) !important;
     }
 
-    /* Active left bar */
+    /* Active left bar - Green */
     .rstore-nav .nav-link.active::before {
       content: "";
       position: absolute;
       left: 0; top: 20%; height: 60%;
       width: 3px;
-      background: var(--rs-orange);
+      background: var(--rs-green);
       border-radius: 0 3px 3px 0;
     }
 
     body.dark-mode .rstore-nav .nav-link:hover,
     body.dark-mode .rstore-nav .nav-link.active {
-      background: rgba(245,158,11,.12) !important;
-      color: #fbbf24 !important;
+      background: rgba(26, 95, 75, 0.12) !important;
+      color: #2c8b70 !important;
     }
 
     body.dark-mode .rstore-nav .nav-link:hover .nav-icon,
     body.dark-mode .rstore-nav .nav-link.active .nav-icon {
-      color: #fbbf24 !important;
+      color: #2c8b70 !important;
     }
 
     /* =====================================================
@@ -456,7 +457,7 @@
       color: #f9fafb;
     }
 
-    /* Buttons */
+    /* Buttons - Green Theme */
     .btn {
       border-radius: 8px !important;
       font-weight: 500 !important;
@@ -465,16 +466,26 @@
     }
 
     .btn-warning, .btn-warning:hover {
-      background: var(--rs-orange) !important;
-      border-color: var(--rs-orange) !important;
+      background: var(--rs-green) !important;
+      border-color: var(--rs-green) !important;
       color: #fff !important;
     }
 
     .btn-warning:hover {
-      background: var(--rs-orange-dark) !important;
-      border-color: var(--rs-orange-dark) !important;
+      background: var(--rs-green-dark) !important;
+      border-color: var(--rs-green-dark) !important;
       transform: translateY(-1px);
-      box-shadow: 0 4px 10px var(--rs-orange-glow) !important;
+      box-shadow: 0 4px 10px var(--rs-green-glow) !important;
+    }
+
+    /* Primary button override if needed */
+    .btn-primary {
+      background: #1a5f4b !important;
+      border-color: #1a5f4b !important;
+    }
+    .btn-primary:hover {
+      background: #0e3d30 !important;
+      border-color: #0e3d30 !important;
     }
 
     /* =====================================================
@@ -524,7 +535,7 @@
     body.dark-mode .sidebar::-webkit-scrollbar-thumb { background: #374151; }
 
     /* =====================================================
-       COLLAPSED SIDEBAR — hide labels nicely
+       COLLAPSED SIDEBAR
        ===================================================== */
     .sidebar-collapse .rstore-user-panel,
     .sidebar-collapse .rstore-nav-header { opacity: 0; transition: opacity .2s; }
@@ -551,13 +562,20 @@
       overflow-y: auto;
     }
 
-    /* Fix for any overlay issues */
     body.modal-open {
       overflow: visible !important;
     }
 
     .modal-dialog {
       pointer-events: auto;
+    }
+
+    /* Footer link green */
+    .main-footer span {
+      color: #1a5f4b !important;
+    }
+    body.dark-mode .main-footer span {
+      color: #2c8b70 !important;
     }
   </style>
 </head>
@@ -572,7 +590,7 @@
   <?= $this->renderSection('content') ?>
 
   <footer class="main-footer" style="font-size:12px;">
-    <strong>&copy; <?= date('Y') ?> <span style="color:var(--rs-orange);">RStore</span></strong>
+    <strong>&copy; <?= date('Y') ?> <span style="color:var(--rs-green);">RStore</span></strong>
     &mdash; Sales &amp; Inventory System
     <div class="float-right d-none d-sm-inline-block text-muted">
       <b>Version</b> CI4.v1
@@ -582,7 +600,7 @@
 </div>
 
 <!-- ===================================================== -->
-<!-- SINGLE SET OF SCRIPTS (REMOVED DUPLICATES) -->
+<!-- SCRIPTS -->
 <!-- ===================================================== -->
 <script src="<?= base_url('assets/adminlte/plugins/jquery/jquery.min.js') ?>"></script>
 <script src="<?= base_url('assets/adminlte/plugins/jquery-ui/jquery-ui.min.js') ?>"></script>
@@ -614,7 +632,7 @@
 <script src="<?= base_url('assets/adminlte/plugins/toastr/toastr.min.js') ?>"></script>
 
 <script>
-  // ── Toastr defaults
+  // Toastr defaults
   toastr.options = {
     closeButton: true,
     progressBar: true,
@@ -624,7 +642,7 @@
     hideMethod: 'fadeOut',
   };
 
-  // ── Theme toggle
+  // Theme toggle functionality
   const themeToggle = document.getElementById('themeToggle');
   const navbar      = document.getElementById('mainNavbar');
   const sidebar     = document.getElementById('mainSidebar');
@@ -663,11 +681,9 @@
 
   // Global modal cleanup to prevent backdrop issues
   $(document).ready(function() {
-    // Remove any stuck backdrops on page load
     $('.modal-backdrop').remove();
     $('body').removeClass('modal-open');
     
-    // Clean up modals when closed
     $(document).on('hidden.bs.modal', '.modal', function() {
       $('.modal-backdrop').remove();
       $('body').removeClass('modal-open');
