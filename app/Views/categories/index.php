@@ -59,7 +59,7 @@
 <div class="modal fade" id="AddNewModal" tabindex="-1" role="dialog" aria-labelledby="AddNewModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
+      <div class="modal-header bg-success text-white">
         <h5 class="modal-title">
           <i class="fa fa-plus-circle"></i> Add New Category
         </h5>
@@ -105,7 +105,7 @@
 <div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog" aria-labelledby="editCategoryModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header bg-warning text-white">
+      <div class="modal-header bg-success text-white">
         <h5 class="modal-title">
           <i class="fa fa-edit"></i> Edit Category
         </h5>

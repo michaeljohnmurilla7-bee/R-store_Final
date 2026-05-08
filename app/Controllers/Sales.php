@@ -64,103 +64,115 @@ class Sales extends BaseController
     /**
      * Get sales data for DataTable
      */
-    public function getSalesData()
-    {   
-        $request = service('request');
-        $start = $request->getPost('start');
-        $length = $request->getPost('length');
-        $search = $request->getPost('search')['value'];
+      public function getSalesData()
+ {   
+    $request = service('request');
     
-        $db = \Config\Database::connect();
-        $builder = $db->table('sales');
-
-        // COMMENT OUT OR REMOVE the status filter section
-        /*
-       if ($request->getPost('order_status')) {
-        $builder->where('status', $request->getPost('order_status'));  // ← This line causes error
-        }
-       */
-        // Get request variables from DataTable
-        $draw = $this->request->getVar('draw') ?? 1;
-        $start = $this->request->getVar('start') ?? 0;
-        $length = $this->request->getVar('length') ?? 10;
-        $search = $this->request->getVar('search')['value'] ?? null;
-        
-        // Get order column and direction
-        $orderColumn = $this->request->getVar('order')[0]['column'] ?? 0;
-        $orderDir = $this->request->getVar('order')[0]['dir'] ?? 'DESC';
-        
-        // Map column indexes to database fields
-        $columns = [
-            0 => 'id',
-            1 => 'invoice_number',
-            2 => 'customer_name',
-            3 => 'sale_date',
-            4 => 'total_amount',
-            5 => 'amount_paid',
-            6 => 'due_amount',
-            7 => 'payment_status',
-            8 => 'status',
-            9 => 'created_at'
-        ];
-        
-        $orderBy = $columns[$orderColumn] ?? 'id';
-        
-        // Build query
-        $builder = $this->salesModel->builder();
-        $builder->select('sales.*, customers.name as customer_name, customers.phone as customer_phone');
-        $builder->join('customers', 'customers.id = sales.customer_id', 'left');
-        
-        // Apply search
-        if ($search) {
-            $builder->groupStart()
-                ->like('sales.invoice_number', $search)
-                ->orLike('customers.name', $search)
-                ->orLike('customers.phone', $search)
-                ->orLike('sales.payment_status', $search)
-                ->orLike('sales.status', $search)
-                ->groupEnd();
-        }
-        
-        // Get total records count
-        $totalRecords = $builder->countAllResults(false);
-        
-        // Get filtered records count
-        $filteredRecords = $totalRecords;
-        
-        // Apply ordering and limits
-        $builder->orderBy($orderBy, $orderDir)
-            ->limit($length, $start);
-        
-        $sales = $builder->get()->getResult();
-        
-        // Prepare data for DataTable
-        $data = [];
-        foreach ($sales as $sale) {
-            $data[] = [
-                'id' => $sale->id,
-                'invoice_number' => $sale->invoice_number,
-                'customer_name' => $sale->customer_name ?? 'Walk-in Customer',
-                'customer_phone' => $sale->customer_phone ?? '-',
-                'sale_date' => date('Y-m-d H:i:s', strtotime($sale->sale_date)),
-                'total_amount' => number_format($sale->total_amount, 2),
-                'discount' => number_format($sale->discount ?? 0, 2),
-                'amount_paid' => number_format($sale->amount_paid, 2),
-                'due_amount' => number_format($sale->due_amount ?? 0, 2),
-                'payment_status' => $this->getPaymentStatusBadge($sale->payment_status),
-                'status' => $this->getOrderStatusBadge($sale->status),
-                'created_at' => date('Y-m-d H:i:s', strtotime($sale->created_at)),
-                'action' => $this->generateActionButtons($sale->id)
-            ];
-        }
-        
-        return $this->response->setJSON([
-            'draw' => intval($draw),
-            'recordsTotal' => $totalRecords,
-            'recordsFiltered' => $filteredRecords,
-            'data' => $data
-        ]);
+    // Get request variables from DataTable (REMOVED DUPLICATES)
+    $draw = $request->getPost('draw') ?? 1;
+    $start = $request->getPost('start') ?? 0;
+    $length = $request->getPost('length') ?? 10;
+    $search = $request->getPost('search')['value'] ?? null;
+    
+    // Get order column and direction
+    $orderColumn = $request->getPost('order')[0]['column'] ?? 0;
+    $orderDir = $request->getPost('order')[0]['dir'] ?? 'DESC';
+    
+    // Map column indexes to database fields (MATCHES YOUR TABLE EXACTLY)
+    $columns = [
+        0 => 'id',
+        1 => 'user_id',
+        2 => 'customer_id',
+        3 => 'sale_date',
+        4 => 'total_amount',
+        5 => 'discount',
+        6 => 'amount_paid',
+        7 => 'due_amount',    // You have this column, right? Check your table
+        8 => 'status',
+        9 => 'notes',
+        10 => 'created_at'
+    ];
+    
+    $orderBy = $columns[$orderColumn] ?? 'id';
+    
+    $db = \Config\Database::connect();
+    $builder = $db->table('sales');
+    
+    // Apply status filter - NOW THIS WILL WORK because column exists
+    if ($request->getPost('order_status')) {
+        $builder->where('status', $request->getPost('order_status'));
     }
+    
+    // Apply search
+    if ($search) {
+        $builder->groupStart()
+            ->like('id', $search)
+            ->orLike('user_id', $search)
+            ->orLike('customer_id', $search)
+            ->orLike('status', $search)
+            ->orLike('notes', $search)
+            ->groupEnd();
+    }
+    
+    // Get total records count
+    $totalRecords = $builder->countAllResults(false);
+    
+    // Apply ordering and limits
+    $builder->orderBy($orderBy, $orderDir)
+        ->limit((int)$length, (int)$start);
+    
+    $sales = $builder->get()->getResultArray();
+    
+    // Prepare data for DataTable
+    $data = [];
+    foreach ($sales as $sale) {
+        // Calculate due amount if your table doesn't have it
+        $dueAmount = isset($sale['due_amount']) ? $sale['due_amount'] : ($sale['total_amount'] - $sale['amount_paid']);
+        
+        // Format status badge
+        $statusBadge = '';
+        switch($sale['status']) {
+            case 'completed':
+                $statusBadge = '<span class="badge badge-success">Completed</span>';
+                break;
+            case 'pending':
+                $statusBadge = '<span class="badge badge-warning">Pending</span>';
+                break;
+            case 'cancelled':
+                $statusBadge = '<span class="badge badge-danger">Cancelled</span>';
+                break;
+            default:
+                $statusBadge = '<span class="badge badge-secondary">' . $sale['status'] . '</span>';
+        }
+        
+        $data[] = [
+            'id' => $sale['id'] ?? '',
+            'user_id' => $sale['user_id'] ?? '',
+            'customer_id' => $sale['customer_id'] ?? 'N/A',
+            'sale_date' => date('Y-m-d', strtotime($sale['sale_date'])),
+            'total_amount' => '₱ ' . number_format($sale['total_amount'] ?? 0, 2),
+            'discount' => '₱ ' . number_format($sale['discount'] ?? 0, 2),
+            'amount_paid' => '₱ ' . number_format($sale['amount_paid'] ?? 0, 2),
+            'due_amount' => '₱ ' . number_format($dueAmount, 2),
+            'status' => $statusBadge,
+            'notes' => $sale['notes'] ?? '',
+            'created_at' => date('Y-m-d H:i:s', strtotime($sale['created_at'])),
+            'action' => '<button class="btn btn-sm btn-info" onclick="viewSale(' . $sale['id'] . ')">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteSale(' . $sale['id'] . ')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>'
+        ];
+    }
+    
+    return $this->response->setJSON([
+        'draw' => intval($draw),
+        'recordsTotal' => (int)$totalRecords,
+        'recordsFiltered' => (int)$totalRecords,
+        'data' => $data
+    ]);
+ }
     
     /**
      * Get single sale data

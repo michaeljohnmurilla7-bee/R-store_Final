@@ -65,7 +65,7 @@
 <div class="modal fade" id="AddNewModal" tabindex="-1" role="dialog">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
+      <div class="modal-header bg-success text-white">
         <h5 class="modal-title">
           <i class="fa fa-plus-circle"></i> Add New Customer
         </h5>
@@ -113,7 +113,7 @@
 <div class="modal fade" id="editCustomerModal" tabindex="-1" role="dialog">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header bg-warning text-white">
+      <div class="modal-header bg-success text-white">
         <h5 class="modal-title">
           <i class="fa fa-edit"></i> Edit Customer
         </h5>
@@ -280,7 +280,7 @@ $(document).ready(function() {
                         <button class="btn btn-sm btn-info view-btn" data-id="${row.id}">
                             <i class="fa fa-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-warning edit-btn" data-id="${row.id}">
+                        <button class="btn btn-sm btn-success edit-btn" data-id="${row.id}">
                             <i class="fa fa-edit"></i>
                         </button>
                         <button class="btn btn-sm btn-danger delete-btn" data-id="${row.id}">

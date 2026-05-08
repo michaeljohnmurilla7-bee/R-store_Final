@@ -26,7 +26,7 @@
             <div class="card-header">
               <h3 class="card-title">List of Sales Orders</h3>
               <div class="float-right">
-                <button type="button" class="btn btn-md btn-primary" id="addNewSaleBtn">
+                <button type="button" class="btn btn-md btn-success" id="addNewSaleBtn">
                   <i class="fa fa-plus-circle"></i> New Sale
                 </button>
                 <button type="button" class="btn btn-md btn-success ml-2" id="exportBtn">

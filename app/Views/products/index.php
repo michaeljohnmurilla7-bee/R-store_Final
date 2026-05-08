@@ -63,7 +63,7 @@
 <div class="modal fade" id="AddNewModal" tabindex="-1" role="dialog" aria-labelledby="AddNewModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
+      <div class="modal-header bg-success text-white">
         <h5 class="modal-title">
           <i class="fa fa-plus-circle"></i> Add New Product
         </h5>
@@ -180,7 +180,7 @@
 <div class="modal fade" id="editProductModal" tabindex="-1" role="dialog" aria-labelledby="editProductModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <div class="modal-header bg-warning text-white">
+      <div class="modal-header bg-success text-white">
         <h5 class="modal-title">
           <i class="fa fa-edit"></i> Edit Product
         </h5>
@@ -350,7 +350,7 @@
 <div class="modal fade" id="stockAdjustmentModal" tabindex="-1" role="dialog" aria-labelledby="stockAdjustmentModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header bg-warning text-white">
+      <div class="modal-header bg-success text-white">
         <h5 class="modal-title">
           <i class="fa fa-exchange-alt"></i> Adjust Stock
         </h5>

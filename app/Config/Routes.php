@@ -91,6 +91,7 @@ $routes->group('suppliers', function($routes) {
     $routes->get('getSuppliers', 'Suppliers::getSuppliers');
     $routes->get('getSupplier/(:num)', 'Suppliers::getSupplier/$1');
     $routes->get('getSelectList', 'Suppliers::getSelectList');
+    $routes->get('sales/getData', 'SalesController::getSalesData');
     
     // Export
     $routes->get('export', 'Suppliers::export');
@@ -195,7 +196,7 @@ $routes->group('sales', function($routes) {
     $routes->get('getCount', 'Sales::getCount');
     
     // DataTable AJAX endpoints
-    $routes->get('getSalesData', 'Sales::getSalesData');
+    $routes->post('getSalesData', 'Sales::getSalesData');
     $routes->get('getSale/(:num)', 'Sales::getSale/$1');
     $routes->get('getTodaySales', 'Sales::getTodaySales');
     $routes->get('getSalesByDateRange', 'Sales::getSalesByDateRange');
@@ -308,4 +309,6 @@ $routes->group('sales', function($routes) {
     $routes->get('getSalesTargets', 'Sales::getSalesTargets');
     $routes->post('setSalesTarget', 'Sales::setSalesTarget');
     $routes->get('getAchievement', 'Sales::getAchievement');
+
+    
 });

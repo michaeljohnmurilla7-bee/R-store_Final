@@ -3,11 +3,10 @@
 $(document).ready(function() {
     // Initialize DataTable
     var salesTable = $('#salesTable').DataTable({
-        "processing": true,
-        "serverSide": true,
-        "ajax": {
-            "url": baseUrl + "/sales/getSalesData",
-            "type": "POST",
+    ajax: {
+        url: "/sales/getSalesData",
+        type: "POST"  // ← Add this line
+    },
             "data": function(d) {
                 d.<?= csrf_token() ?> = '<?= csrf_hash() ?>';
                 d.start_date = $('#startDate').val();
@@ -477,6 +476,7 @@ $(document).ready(function() {
             salesTable.ajax.reload();
         }
     });
+    
     
     // Print functionality
     $('#printInvoiceBtn').click(function() {

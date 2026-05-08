@@ -30,12 +30,12 @@ class CustomersModel extends Model
     protected $deletedField = null;
 
     // Validation
-    protected $validationRules = [
-        'name' => 'required|min_length[2]|max_length[100]',
-        'phone' => 'permit_empty|min_length[10]|max_length[20]',
-        'email' => 'required|valid_email|is_unique[customers.email,id,{id}]',
-        'address' => 'permit_empty|max_length[255]'
-    ];
+   protected $validationRules = [
+    'name' => 'required|min_length[2]|max_length[100]',
+    'phone' => 'permit_empty|min_length[10]|max_length[20]',
+    'email' => 'required|valid_email',
+    'address' => 'permit_empty|max_length[255]'
+];
 
     protected $validationMessages = [
         'name' => [
@@ -49,7 +49,7 @@ class CustomersModel extends Model
         ]
     ];
 
-    protected $skipValidation = false;
+    protected $skipValidation = true;
     protected $cleanValidationRules = true;
 
     // Callbacks
