@@ -34,7 +34,7 @@ class ProductsModel extends Model
         'cost_price'  => 'permit_empty|numeric',
         'stock_qty'   => 'permit_empty|integer',
         'reorder_level' => 'permit_empty|integer',
-        'is_active'   => 'permit_empty|integer|in_list[0,1]'
+        'is_active'   => 'permit_empty|integer|in_list[0,1]'    
     ];
     
     protected $validationMessages = [];

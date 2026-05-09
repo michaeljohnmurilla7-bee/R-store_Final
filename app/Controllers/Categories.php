@@ -177,7 +177,7 @@ public function getSelectList()
         }
 
         $rules = [
-            'name' => "required|min_length[2]|max_length[100]|is_unique[categories.name,id,{$id}]",
+            'name' => "required|min_length[2]|max_length[100]|is_unique[categories.name,{$id}]",
             'description' => 'permit_empty|max_length[500]',
             'is_active' => 'permit_empty|integer|in_list[0,1]'
         ];

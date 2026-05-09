@@ -71,4 +71,18 @@ class SupplierModel extends Model
         
         return $supplier;
     }
+
+    // Add this method to your Suppliers controller
+    public function getSuppliersData()
+   {
+    $suppliers = $this->supplierModel->findAll();
+    
+    // If you have a getWithDetails method, use it instead
+    // $suppliers = $this->supplierModel->getWithDetails();
+    
+    return $this->response->setJSON([
+        'status' => 'success',
+        'data' => $suppliers
+    ]);
+   }
 }

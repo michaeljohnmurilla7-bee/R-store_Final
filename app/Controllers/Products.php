@@ -191,37 +191,44 @@ class Products extends BaseController
     // Update product
     // --------------------------------------------------------------------
     public function update($id)
-    {
-        $rules = $this->productModel->validationRules;
-        // Modify unique rule for update
-        $rules['sku'] = "required|is_unique[products.sku,id,{$id}]";
-        
-        if (! $this->validate($rules)) {
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'errors' => $this->validator->getErrors()
-                ]);
-            }
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
-        }
-
-        $data = $this->request->getPost();
-        
-        // Remove id from data if present
-        unset($data['id']);
-        
-        $this->productModel->update($id, $data);
-
+{
+    $rules = $this->productModel->validationRules;
+    // Modify unique rule for update - CORRECT SYNTAX
+    $rules['sku'] = "required|is_unique[products.sku,{$id}]";
+    
+    if (! $this->validate($rules)) {
         if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'errors' => $this->validator->getErrors()
+            ]);
+        }
+        return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+    }
+
+    $data = $this->request->getPost();
+    
+    // Remove id from data if present
+    unset($data['id']);
+    
+    $result = $this->productModel->update($id, $data);
+
+    if ($this->request->isAJAX()) {
+        if ($result) {
             return $this->response->setJSON([
                 'status' => 'success', 
                 'message' => 'Product updated successfully'
             ]);
+        } else {
+            return $this->response->setJSON([
+                'status' => 'error', 
+                'message' => 'Failed to update product'
+            ]);
         }
-        
-        return redirect()->to('/products')->with('message', 'Product updated successfully');
     }
+    
+    return redirect()->to('/products')->with('message', 'Product updated successfully');
+}
 
     // --------------------------------------------------------------------
     // Delete product

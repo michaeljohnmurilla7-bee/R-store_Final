@@ -405,34 +405,46 @@ $(document).ready(function() {
         });
     });
 
-    // Delete Product
-    $(document).on('click', '.delete-product', function() {
-        var id = $(this).data('id');
-        var productName = $(this).closest('tr').find('td:eq(2)').text(); // Get product name from table
+ // Delete Product - FIXED VERSION
+  $(document).on('click', '.delete-product', function() {
+    var id = $(this).data('id');
+    var productName = $(this).closest('tr').find('td:eq(2)').text();
+    
+    if (confirm('Are you sure you want to delete product "' + productName + '"? This action cannot be undone.')) {
+        // Get CSRF values from meta tags (NO PHP CODE IN .JS FILE)
+        var csrfTokenName = $('meta[name="csrf-token-name"]').attr('content');
+        var csrfHash = $('meta[name="csrf-token-hash"]').attr('content');
         
-        if (confirm('Are you sure you want to delete product "' + productName + '"? This action cannot be undone.')) {
-            $.ajax({
-                url: baseUrl + 'products/delete/' + id,
-                type: 'DELETE',
-                data: {
-                    '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
-                },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'success') {
-                        showToast('success', response.message || 'Product deleted successfully!');
-                        dataTable.ajax.reload(null, false); // Reload table data
-                    } else {
-                        showToast('error', response.message || 'Failed to delete product.');
-                    }
-                },
-                error: function(xhr) {
-                    console.error('AJAX Error:', xhr.responseText);
-                    showToast('error', 'Server error occurred. Please try again.');
+        var postData = {
+            '_method': 'DELETE'
+        };
+        // Add CSRF token dynamically
+        postData[csrfTokenName] = csrfHash;
+        
+        $.ajax({
+            url: baseUrl + 'products/delete/' + id,
+            type: 'POST',
+            data: postData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    showToast('success', response.message || 'Product deleted successfully!');
+                    dataTable.ajax.reload(null, false);
+                } else {
+                    showToast('error', response.message || 'Failed to delete product.');
                 }
-            });
-        }
-    });
+            },
+            error: function(xhr) {
+                console.error('AJAX Error:', xhr.responseText);
+                let errorMsg = 'Server error occurred. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                showToast('error', errorMsg);
+            }
+        });
+    }
+ });
 
     // Clear form errors when modals are closed
     $('#AddNewModal').on('hidden.bs.modal', function() {

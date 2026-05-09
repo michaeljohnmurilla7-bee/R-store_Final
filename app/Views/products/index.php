@@ -1,6 +1,7 @@
 <?= $this->extend('theme/template') ?>
 
 <?= $this->section('content') ?>
+
 <div class="content-wrapper">
   <div class="content-header">
     <div class="container-fluid">
@@ -404,6 +405,8 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<meta name="csrf-token-name" content="<?= csrf_token() ?>">
+<meta name="csrf-token-hash" content="<?= csrf_hash() ?>">
 <script>
 const baseUrl = "<?= base_url() ?>";
 
