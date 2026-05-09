@@ -85,7 +85,12 @@ $routes->get('suppliers/getSelectList', 'Suppliers::getSelectList');
 $routes->group('suppliers', function($routes) {
     // Main pages
     $routes->get('/', 'Suppliers::index');
-    $routes->get('getCount', 'Suppliers::getCount');
+    $routes->post('getSuppliers', 'Suppliers::getSuppliers');
+    $routes->post('addSupplier', 'Suppliers::addSupplier');
+    $routes->get('getSupplier/(:num)', 'Suppliers::getSupplier/$1');
+    $routes->post('updateSupplier', 'Suppliers::updateSupplier');
+    $routes->post('deleteSupplier', 'Suppliers::deleteSupplier');
+    $routes->get('refreshCSRF', 'Suppliers::refreshCSRF');
     
     // DataTable AJAX endpoints
     $routes->get('getSuppliers', 'Suppliers::getSuppliers');
