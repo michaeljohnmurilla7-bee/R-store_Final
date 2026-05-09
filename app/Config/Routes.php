@@ -184,125 +184,34 @@ $routes->group('customers', function($routes) {
     $routes->get('json', 'Customers::jsonList');
 });
 
+
 $routes->group('sales', function($routes) {
     // Main pages
     $routes->get('/', 'Sales::index');
-    $routes->get('getCount', 'Sales::getCount');
+    $routes->post('getSalesData', 'Sales::getSalesData');
     
-    // DataTable AJAX endpoints
+    // DataTable AJAX endpoints - IMPORTANT: No 'sales/' prefix inside group!
     $routes->post('getSalesData', 'Sales::getSalesData');
     $routes->get('getSale/(:num)', 'Sales::getSale/$1');
-    $routes->get('getTodaySales', 'Sales::getTodaySales');
-    $routes->get('getSalesByDateRange', 'Sales::getSalesByDateRange');
-    $routes->post('updatePaymentStatus', 'Sales::updatePaymentStatus');
+    $routes->get('getCustomers', 'Sales::getCustomers');
+    $routes->get('getCount', 'Sales::getCount');
+    $routes->get('getSalesSummary', 'Sales::getSalesSummary');
+    $routes->get('getRecentSales', 'Sales::getRecentSales');
     
-    // Create/Store
-    $routes->get('create', 'Sales::create');
+    // CRUD Operations
     $routes->post('store', 'Sales::store');
-    
-    // Edit/Update
-    $routes->get('(:num)/edit', 'Sales::edit/$1');
     $routes->post('update/(:num)', 'Sales::update/$1');
-    
-    // Delete
     $routes->delete('delete/(:num)', 'Sales::delete/$1');
-    
-    // Invoice/Receipt
-    $routes->get('(:num)/invoice', 'Sales::invoice/$1');
-    $routes->get('(:num)/receipt', 'Sales::receipt/$1');
-    $routes->post('(:num)/sendReceipt', 'Sales::sendReceipt/$1');
+    $routes->post('delete/(:num)', 'Sales::delete/$1'); // Fallback
     
     // Payment handling
-    $routes->post('(:num)/processPayment', 'Sales::processPayment/$1');
-    $routes->get('(:num)/paymentHistory', 'Sales::paymentHistory/$1');
-    $routes->post('recordPayment', 'Sales::recordPayment');
-    
-    // Returns/Refunds
-    $routes->get('(:num)/return', 'Sales::return/$1');
-    $routes->post('processReturn', 'Sales::processReturn');
-    $routes->get('getReturnsData', 'Sales::getReturnsData');
-    
-    // Reports & Analytics
-    $routes->get('dailyReport', 'Sales::dailyReport');
-    $routes->get('weeklyReport', 'Sales::weeklyReport');
-    $routes->get('monthlyReport', 'Sales::monthlyReport');
-    $routes->get('yearlyReport', 'Sales::yearlyReport');
-    $routes->post('generateReport', 'Sales::generateReport');
-    
-    // Dashboard widgets
-    $routes->get('getSalesSummary', 'Sales::getSalesSummary');
-    $routes->get('getTopProducts', 'Sales::getTopProducts');
-    $routes->get('getSalesChart', 'Sales::getSalesChart');
-    $routes->get('getRecentSales', 'Sales::getRecentSales');
+    $routes->post('processPayment/(:num)', 'Sales::processPayment/$1');
+    $routes->post('cancelSale/(:num)', 'Sales::cancelSale/$1'); // ADD THIS
     
     // Export functionality
     $routes->get('export', 'Sales::export');
-    $routes->get('exportInvoice/(:num)', 'Sales::exportInvoice/$1');
-    $routes->post('exportSalesReport', 'Sales::exportSalesReport');
     
-    // Cart operations (for POS)
-    $routes->post('addToCart', 'Sales::addToCart');
-    $routes->post('removeFromCart', 'Sales::removeFromCart');
-    $routes->post('updateCart', 'Sales::updateCart');
-    $routes->get('getCart', 'Sales::getCart');
-    $routes->post('clearCart', 'Sales::clearCart');
-    $routes->post('applyDiscount', 'Sales::applyDiscount');
-    
-    // Customer related
-    $routes->get('getCustomer/(:num)', 'Sales::getCustomer/$1');
-    $routes->post('createCustomer', 'Sales::createCustomer');
-    
-    // Product search for POS
+    // Product search
     $routes->get('searchProducts/(:any)', 'Sales::searchProducts/$1');
-    $routes->get('getProductByBarcode/(:any)', 'Sales::getProductByBarcode/$1');
-    
-    // Legacy routes (keep for backward compatibility)
-    $routes->post('save', 'Sales::save');
-    $routes->get('edit/(:segment)', 'Sales::edit/$1');
-    $routes->post('update', 'Sales::update');
-    $routes->delete('delete/(:num)', 'Sales::delete/$1');
-    $routes->post('fetchRecords', 'Sales::fetchRecords');
-    $routes->get('json', 'Sales::jsonList');
-});
-
-// Additional sales routes you might need
-$routes->group('sales', function($routes) {
-    // Multiple currency support
-    $routes->get('getExchangeRates', 'Sales::getExchangeRates');
-    $routes->post('setCurrency', 'Sales::setCurrency');
-    
-    // Tax handling
-    $routes->get('getTaxRates', 'Sales::getTaxRates');
-    $routes->post('calculateTax', 'Sales::calculateTax');
-    
-    // Discounts and vouchers
-    $routes->post('applyVoucher', 'Sales::applyVoucher');
-    $routes->get('validateVoucher/(:any)', 'Sales::validateVoucher/$1');
-    
-    // Sales status updates
-    $routes->post('(:num)/complete', 'Sales::complete/$1');
-    $routes->post('(:num)/cancel', 'Sales::cancel/$1');
-    $routes->post('(:num)/hold', 'Sales::hold/$1');
-    $routes->get('getHeldSales', 'Sales::getHeldSales');
-    $routes->post('resumeSale/(:num)', 'Sales::resumeSale/$1');
-    
-    // Bulk operations
-    $routes->post('bulkDelete', 'Sales::bulkDelete');
-    $routes->post('bulkUpdateStatus', 'Sales::bulkUpdateStatus');
-    
-    // Print functionality
-    $routes->get('(:num)/print', 'Sales::print/$1');
-    $routes->get('printDailySummary', 'Sales::printDailySummary');
-    
-    // Statistics endpoints
-    $routes->get('getStatsByCategory', 'Sales::getStatsByCategory');
-    $routes->get('getStatsByPaymentMethod', 'Sales::getStatsByPaymentMethod');
-    $routes->get('getBestSellingPeriod', 'Sales::getBestSellingPeriod');
-    
-    // Sales targets and goals
-    $routes->get('getSalesTargets', 'Sales::getSalesTargets');
-    $routes->post('setSalesTarget', 'Sales::setSalesTarget');
-    $routes->get('getAchievement', 'Sales::getAchievement');
-
-    
+    $routes->get('searchProducts', 'Sales::searchProducts');
 });
