@@ -52,21 +52,13 @@
 
         <!-- CATEGORIES WITH SUBMENU (COLLAPSIBLE) -->
         <li class="nav-item rstore-nav-item has-treeview <?= is_active(2, 'categories') ? 'menu-open' : '' ?>">
-          <a href="#" class="nav-link <?= is_active(2, 'categories') ?>">
+          <a href="<?= base_url('categories') ?>" class="nav-link <?= is_active(2, 'categories') ?>">
             <i class="nav-icon fas fa-tags"></i>
             <p>
               Categories
               <i class="fas fa-angle-left right"></i>
             </p>
           </a>
-          <ul class="nav nav-treeview">
-            <li class="nav-item">
-              <a href="<?= base_url('categories') ?>" class="nav-link <?= is_active(1, 'categories') ?>">
-                <i class="fas fa-list nav-icon"></i>
-                <p>List Categories</p>
-              </a>
-            </li>
-          </ul>
         </li>
 
         <li class="nav-item rstore-nav-item">

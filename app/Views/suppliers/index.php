@@ -34,18 +34,18 @@
             <div class="card-body">
               <table id="example1" class="table table-bordered table-striped table-sm">
                 <thead>
-                  <tr>
-                    <th>No.</th>
-                    <th style="display:none;">id</th>
-                    <th>Name</th>
-                    <th>Contact Person</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Address</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+                 <tr>
+                  <th>No.</th>
+                  <th style="display:none;">ID</th>
+                  <th>Name</th>
+                  <th>Contact Person</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Address</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
                 <tbody></tbody>
               </table>
             </div>
@@ -113,42 +113,6 @@
           <div class="row">
             <div class="col-md-6">
               <div class="form-group">
-                <label>City</label>
-                <input type="text" name="city" class="form-control" placeholder="City">
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>State/Province</label>
-                <input type="text" name="state" class="form-control" placeholder="State/Province">
-              </div>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Postal Code</label>
-                <input type="text" name="postal_code" class="form-control" placeholder="Postal code">
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Country</label>
-                <input type="text" name="country" class="form-control" placeholder="Country">
-              </div>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Tax Number/VAT</label>
-                <input type="text" name="tax_number" class="form-control" placeholder="Tax/VAT number">
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-group">
                 <label>Status</label>
                 <select name="is_active" class="form-control">
                   <option value="1">Active</option>
@@ -156,11 +120,6 @@
                 </select>
               </div>
             </div>
-          </div>
-
-          <div class="form-group">
-            <label>Notes</label>
-            <textarea name="notes" class="form-control" rows="2" placeholder="Additional notes (optional)"></textarea>
           </div>
         </div>
         <div class="modal-footer">
@@ -232,43 +191,9 @@
             </div>
           </div>
 
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>City</label>
-                <input type="text" name="city" id="city" class="form-control">
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>State/Province</label>
-                <input type="text" name="state" id="state" class="form-control">
-              </div>
-            </div>
-          </div>
+   
 
           <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Postal Code</label>
-                <input type="text" name="postal_code" id="postal_code" class="form-control">
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Country</label>
-                <input type="text" name="country" id="country" class="form-control">
-              </div>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label>Tax Number/VAT</label>
-                <input type="text" name="tax_number" id="tax_number" class="form-control">
-              </div>
-            </div>
             <div class="col-md-6">
               <div class="form-group">
                 <label>Status</label>
@@ -278,11 +203,6 @@
                 </select>
               </div>
             </div>
-          </div>
-
-          <div class="form-group">
-            <label>Notes</label>
-            <textarea name="notes" id="notes" class="form-control" rows="2"></textarea>
           </div>
         </div>
         <div class="modal-footer">
@@ -318,7 +238,6 @@
               <tr><th>Contact Person:</th><td id="view_contact_person">-</td></tr>
               <tr><th>Email:</th><td id="view_email">-</td></tr>
               <tr><th>Phone:</th><td id="view_phone">-</td></tr>
-              <tr><th>Tax Number/VAT:</th><td id="view_tax_number">-</td></tr>
             </table>
           </div>
           <div class="col-md-6">
@@ -336,12 +255,6 @@
             <p id="view_address" class="text-muted mt-2">-</p>
           </div>
         </div>
-        <div class="row">
-          <div class="col-12">
-            <strong>Notes:</strong>
-            <p id="view_notes" class="text-muted mt-2">-</p>
-          </div>
-        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">
@@ -357,40 +270,12 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
+<script>
+    // Define baseUrl globally
+    window.baseUrl = "<?= base_url() ?>";
+    console.log('Global baseUrl set to:', window.baseUrl);
+</script>
 <meta name="csrf-token-name" content="<?= csrf_token() ?>">
 <meta name="csrf-token-hash" content="<?= csrf_hash() ?>">
-<script>
-const baseUrl = "<?= base_url() ?>";
-
-// Use vanilla JavaScript to open modal instead of data-toggle
-document.getElementById('addNewSupplierBtn').addEventListener('click', function() {
-    // Reset form
-    document.getElementById('addSupplierForm').reset();
-    // Show modal using Bootstrap 4
-    $('#AddNewModal').modal({
-        backdrop: 'static',
-        keyboard: false,
-        show: true
-    });
-});
-
-// Manual modal cleanup
-$(document).ready(function() {
-    // Force remove any stuck backdrops on page load
-    $('.modal-backdrop').remove();
-    $('body').removeClass('modal-open');
-    
-    // Ensure modals are properly destroyed when closed
-    $('.modal').on('hidden.bs.modal', function() {
-        $('.modal-backdrop').remove();
-        $('body').removeClass('modal-open');
-        $(this).removeData('bs.modal');
-    });
-    
-    // Test if Bootstrap is working
-    console.log('jQuery version:', $.fn.jquery);
-    console.log('Bootstrap modal available:', typeof $.fn.modal !== 'undefined');
-});
-</script>
 <script src="<?= base_url('js/suppliers/suppliers.js') ?>"></script>
 <?= $this->endSection() ?>

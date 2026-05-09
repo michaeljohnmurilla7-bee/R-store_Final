@@ -79,41 +79,30 @@ $routes->get('suppliers/getSelectList', 'Suppliers::getSelectList');
     // Legacy
 });
 
-// ===========================================================================
-// Suppliers Routes
-// ===========================================================================
+
+// Make sure this is inside your routes file
 $routes->group('suppliers', function($routes) {
-    // Main pages
+    // Main page
     $routes->get('/', 'Suppliers::index');
-    $routes->post('getSuppliers', 'Suppliers::getSuppliers');
-    $routes->post('addSupplier', 'Suppliers::addSupplier');
-    $routes->get('getSupplier/(:num)', 'Suppliers::getSupplier/$1');
-    $routes->post('updateSupplier', 'Suppliers::updateSupplier');
-    $routes->post('deleteSupplier', 'Suppliers::deleteSupplier');
-    $routes->get('refreshCSRF', 'Suppliers::refreshCSRF');
     
-    // DataTable AJAX endpoints
-    $routes->get('getSuppliers', 'Suppliers::getSuppliers');
-    $routes->get('getSupplier/(:num)', 'Suppliers::getSupplier/$1');
-    $routes->get('getSelectList', 'Suppliers::getSelectList');
-    $routes->get('sales/getData', 'SalesController::getSalesData');
+    // DataTable - POST for server-side processing
+    $routes->post('getSuppliers', 'Suppliers::getSuppliers');  // Use ::
+
+    // Select list for dropdowns (for products, orders, etc.)
+    $routes->get('getSelectList', 'Suppliers::getSelectList'); // Use ::
+
+    // CRUD Operations
+    $routes->post('addSupplier', 'Suppliers::addSupplier');    // Use ::
+    $routes->get('getSupplier/(:num)', 'Suppliers::getSupplier/$1');  // Use ::
+    $routes->post('updateSupplier', 'Suppliers::updateSupplier');  // Use ::
+    $routes->post('deleteSupplier', 'Suppliers::deleteSupplier');  // Use ::
+    
+    // CSRF Refresh
+    $routes->get('refreshCSRF', 'Suppliers::refreshCSRF');  // Use ::
     
     // Export
-    $routes->get('export', 'Suppliers::export');
-    
-    // Create
-    $routes->post('create', 'Suppliers::create');
-    
-    // Update
-    $routes->post('update/(:num)', 'Suppliers::update/$1');
-    
-    // Delete
-    $routes->delete('delete/(:num)', 'Suppliers::delete/$1');
-    
-    // Status toggle
-    $routes->post('toggleStatus/(:num)', 'Suppliers::toggleStatus/$1');
+    $routes->get('export', 'Suppliers::export');  // Use ::
 });
-
 // Categories Routes
 $routes->group('categories', function($routes) {
     // Main pages

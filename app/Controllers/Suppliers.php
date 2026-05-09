@@ -1,5 +1,4 @@
 <?php
-// app/Controllers/Suppliers.php
 
 namespace App\Controllers;
 
@@ -22,229 +21,224 @@ class Suppliers extends BaseController
     
     public function getSuppliers()
     {
-        if ($this->request->isAJAX()) {
-            $draw = $this->request->getPost('draw');
-            $start = $this->request->getPost('start');
-            $length = $this->request->getPost('length');
-            $search = $this->request->getPost('search')['value'];
-            
-            $totalRecords = $this->supplierModel->countAll();
-            
-            if (!empty($search)) {
-                $this->supplierModel->groupStart()
-                    ->like('name', $search)
-                    ->orLike('email', $search)
-                    ->orLike('phone', $search)
-                    ->groupEnd();
-            }
-            
-            $totalFiltered = $this->supplierModel->countAllResults(false);
-            
-            if (!empty($search)) {
-                $this->supplierModel->groupStart()
-                    ->like('name', $search)
-                    ->orLike('email', $search)
-                    ->orLike('phone', $search)
-                    ->groupEnd();
-            }
-            
-            $suppliers = $this->supplierModel->orderBy('id', 'ASC')
-                ->findAll($length, $start);
-            
-            $data = [];
-            foreach ($suppliers as $supplier) {
-                $data[] = [
-                    'id' => $supplier['id'],
-                    'name' => $supplier['name'],
-                    'contact_person' => $supplier['contact_person'],
-                    'email' => $supplier['email'],
-                    'phone' => $supplier['phone'],
-                    'address' => $supplier['address'],
-                    'is_active' => $supplier['is_active']
-                ];
-            }
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON(['error' => 'Invalid request']);
+        }
+        
+        $draw = $this->request->getPost('draw');
+        $start = $this->request->getPost('start');
+        $length = $this->request->getPost('length');
+        $search = $this->request->getPost('search')['value'] ?? '';
+        
+        $builder = $this->supplierModel->builder();
+        $totalRecords = $this->supplierModel->countAll();
+        
+        if (!empty($search)) {
+            $builder->groupStart()
+                ->like('name', $search)
+                ->orLike('email', $search)
+                ->orLike('phone', $search)
+                ->orLike('contact_person', $search)
+                ->groupEnd();
+        }
+        
+        $totalFiltered = $builder->countAllResults(false);
+        $suppliers = $builder->orderBy('name', 'ASC')
+            ->limit($length, $start)
+            ->get()
+            ->getResultArray();
+        
+        return $this->response->setJSON([
+            'draw' => $draw,
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalFiltered,
+            'data' => $suppliers
+        ]);
+    }
+    
+    // ============ SELECT LIST FOR DROPDOWNS ============
+    public function getSelectList()
+    {
+        // Set JSON header
+        $this->response->setHeader('Content-Type', 'application/json');
+        
+        try {
+            // Get all active suppliers, ordered by name
+            $suppliers = $this->supplierModel->where('is_active', 1)
+                                              ->orderBy('name', 'ASC')
+                                              ->findAll();
             
             return $this->response->setJSON([
-                'draw' => $draw,
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $totalFiltered,
-                'data' => $data
+                'status' => 'success',
+                'data' => $suppliers
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+    // ===================================================
+    
+    public function addSupplier()
+    {
+        $this->response->setHeader('Content-Type', 'application/json');
+        
+        $data = [
+            'name' => trim($this->request->getPost('name')),
+            'contact_person' => trim($this->request->getPost('contact_person')) ?: null,
+            'email' => trim($this->request->getPost('email')) ?: null,
+            'phone' => trim($this->request->getPost('phone')) ?: null,
+            'address' => trim($this->request->getPost('address')) ?: null,
+            'is_active' => $this->request->getPost('is_active') ?? 1
+        ];
+        
+        if (empty($data['name'])) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Supplier name is required'
+            ]);
+        }
+        
+        if ($this->supplierModel->insert($data)) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Supplier added successfully'
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Failed to add supplier'
             ]);
         }
     }
     
-    public function addSupplier()
-{
-    // Enable error reporting for debugging
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
-    
-    // Log the request
-    log_message('debug', 'Add supplier request received');
-    log_message('debug', 'POST data: ' . print_r($this->request->getPost(), true));
-    
-    // Check if it's an AJAX request
-    if (!$this->request->isAJAX()) {
-        return $this->response->setJSON([
-            'status' => 'error',
-            'message' => 'Invalid request type. Expected AJAX request.'
-        ]);
-    }
-    
-    // Validate
-    $rules = [
-        'name' => 'required|min_length[3]',
-        'email' => 'required|valid_email',
-        'phone' => 'required|min_length[10]'
-    ];
-    
-    if (!$this->validate($rules)) {
-        return $this->response->setJSON([
-            'status' => 'error',
-            'message' => $this->validator->getErrors()
-        ]);
-    }
-    
-    // Prepare data
-    $data = [
-        'name' => $this->request->getPost('name'),
-        'contact_person' => $this->request->getPost('contact_person'),
-        'email' => $this->request->getPost('email'),
-        'phone' => $this->request->getPost('phone'),
-        'address' => $this->request->getPost('address'),
-        'city' => $this->request->getPost('city'),
-        'state' => $this->request->getPost('state'),
-        'postal_code' => $this->request->getPost('postal_code'),
-        'country' => $this->request->getPost('country'),
-        'tax_number' => $this->request->getPost('tax_number'),
-        'is_active' => $this->request->getPost('is_active') ?? 1,
-        'notes' => $this->request->getPost('notes')
-    ];
-    
-    // Insert
-    if ($this->supplierModel->insert($data)) {
-        return $this->response->setJSON([
-            'status' => 'success',
-            'message' => 'Supplier added successfully'
-        ]);
-    } else {
-        return $this->response->setJSON([
-            'status' => 'error',
-            'message' => 'Failed to add supplier. Please check the database.'
-        ]);
-    }
-}
-    
     public function getSupplier($id)
     {
-        if ($this->request->isAJAX()) {
-            $supplier = $this->supplierModel->find($id);
-            
-            if ($supplier) {
-                return $this->response->setJSON([
-                    'status' => 'success',
-                    'data' => $supplier
-                ]);
-            } else {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'Supplier not found'
-                ]);
-            }
+        $this->response->setHeader('Content-Type', 'application/json');
+        
+        $supplier = $this->supplierModel->find($id);
+        
+        if ($supplier) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'data' => $supplier
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Supplier not found'
+            ]);
         }
     }
     
     public function updateSupplier()
     {
-        if ($this->request->isAJAX()) {
-            $id = $this->request->getPost('id');
-            $supplier = $this->supplierModel->find($id);
-            
-            if (!$supplier) {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'Supplier not found'
-                ]);
-            }
-            
-            $rules = [
-                'name' => 'required|min_length[3]',
-                'email' => 'required|valid_email',
-                'phone' => 'required|min_length[10]'
-            ];
-            
-            if ($this->request->getPost('email') != $supplier['email']) {
-                $rules['email'] .= '|is_unique[suppliers.email]';
-            }
-            
-            if (!$this->validate($rules)) {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => $this->validator->getErrors()
-                ]);
-            }
-            
-            $data = [
-                'name' => $this->request->getPost('name'),
-                'contact_person' => $this->request->getPost('contact_person'),
-                'email' => $this->request->getPost('email'),
-                'phone' => $this->request->getPost('phone'),
-                'address' => $this->request->getPost('address'),
-                'city' => $this->request->getPost('city'),
-                'state' => $this->request->getPost('state'),
-                'postal_code' => $this->request->getPost('postal_code'),
-                'country' => $this->request->getPost('country'),
-                'tax_number' => $this->request->getPost('tax_number'),
-                'is_active' => $this->request->getPost('is_active'),
-                'notes' => $this->request->getPost('notes')
-            ];
-            
-            if ($this->supplierModel->update($id, $data)) {
-                return $this->response->setJSON([
-                    'status' => 'success',
-                    'message' => 'Supplier updated successfully'
-                ]);
-            } else {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'Failed to update supplier'
-                ]);
-            }
+        $this->response->setHeader('Content-Type', 'application/json');
+        
+        $id = $this->request->getPost('id');
+        
+        if (!$id) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Supplier ID is required'
+            ]);
+        }
+        
+        $data = [
+            'name' => trim($this->request->getPost('name')),
+            'contact_person' => trim($this->request->getPost('contact_person')) ?: null,
+            'email' => trim($this->request->getPost('email')) ?: null,
+            'phone' => trim($this->request->getPost('phone')) ?: null,
+            'address' => trim($this->request->getPost('address')) ?: null,
+            'is_active' => $this->request->getPost('is_active')
+        ];
+        
+        if (empty($data['name'])) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Supplier name is required'
+            ]);
+        }
+        
+        if ($this->supplierModel->update($id, $data)) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Supplier updated successfully'
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Failed to update supplier'
+            ]);
         }
     }
     
     public function deleteSupplier()
     {
-        if ($this->request->isAJAX()) {
-            $id = $this->request->getPost('id');
-            $supplier = $this->supplierModel->find($id);
-            
-            if (!$supplier) {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'Supplier not found'
-                ]);
-            }
-            
-            if ($this->supplierModel->delete($id)) {
-                return $this->response->setJSON([
-                    'status' => 'success',
-                    'message' => 'Supplier deleted successfully'
-                ]);
-            } else {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'Failed to delete supplier'
-                ]);
-            }
+        $this->response->setHeader('Content-Type', 'application/json');
+        
+        $id = $this->request->getPost('id');
+        
+        if (!$id) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Supplier ID is required'
+            ]);
+        }
+        
+        if ($this->supplierModel->delete($id)) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Supplier deleted successfully'
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Failed to delete supplier'
+            ]);
         }
     }
     
     public function refreshCSRF()
     {
+        $this->response->setHeader('Content-Type', 'application/json');
+        
         return $this->response->setJSON([
             'csrf_token' => csrf_token(),
             'csrf_hash' => csrf_hash()
         ]);
+    }
+    
+    public function export()
+    {
+        $suppliers = $this->supplierModel->orderBy('name', 'ASC')->findAll();
+        
+        $filename = 'suppliers_export_' . date('Y-m-d_His') . '.csv';
+        
+        $this->response->setHeader('Content-Type', 'text/csv');
+        $this->response->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        
+        $output = fopen('php://output', 'w');
+        fwrite($output, "\xEF\xBB\xBF");
+        
+        fputcsv($output, ['ID', 'Name', 'Contact Person', 'Email', 'Phone', 'Address', 'Status', 'Created At']);
+        
+        foreach ($suppliers as $supplier) {
+            fputcsv($output, [
+                $supplier['id'],
+                $supplier['name'],
+                $supplier['contact_person'] ?? '',
+                $supplier['email'] ?? '',
+                $supplier['phone'] ?? '',
+                $supplier['address'] ?? '',
+                $supplier['is_active'] == 1 ? 'Active' : 'Inactive',
+                $supplier['created_at'] ?? ''
+            ]);
+        }
+        
+        fclose($output);
+        exit;
     }
 }

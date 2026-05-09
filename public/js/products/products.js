@@ -65,13 +65,13 @@ $(document).ready(function() {
             { 
                 "data": "cost_price",
                 "render": function(data) {
-                    return data ? '$' + parseFloat(data).toFixed(2) : '$0.00';
+                    return data ? '₱' + parseFloat(data).toFixed(2) : '₱0.00';
                 }
             },
             { 
                 "data": "price",
                 "render": function(data) {
-                    return '$' + parseFloat(data).toFixed(2);
+                    return '₱' + parseFloat(data).toFixed(2);
                 }
             },
             { "data": "stock_qty" },
@@ -148,38 +148,46 @@ $(document).ready(function() {
         
         // Load suppliers
         $.ajax({
-            url: baseUrl + 'suppliers/getSelectList',
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                if (response && response.length > 0) {
-                    // Populate add modal supplier dropdown
-                    var addSupplierSelect = $('#AddNewModal select[name="supplier_id"]');
-                    addSupplierSelect.empty();
-                    addSupplierSelect.append('<option value="">Select Supplier</option>');
-                    $.each(response, function(key, supplier) {
-                        addSupplierSelect.append('<option value="' + supplier.id + '">' + supplier.text + '</option>');
-                    });
-                    
-                    // Populate edit modal supplier dropdown
-                    var editSupplierSelect = $('#editProductModal select[name="supplier_id"]');
-                    editSupplierSelect.empty();
-                    editSupplierSelect.append('<option value="">Select Supplier</option>');
-                    $.each(response, function(key, supplier) {
-                        editSupplierSelect.append('<option value="' + supplier.id + '">' + supplier.text + '</option>');
-                    });
-                } else {
-                    // If no suppliers, show message
-                    $('#AddNewModal select[name="supplier_id"]').html('<option value="">No suppliers available. Please add suppliers first.</option>');
-                    $('#editProductModal select[name="supplier_id"]').html('<option value="">No suppliers available. Please add suppliers first.</option>');
-                }
-            },
-            error: function(xhr) {
-                console.error('Failed to load suppliers:', xhr);
-                $('#AddNewModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
-                $('#editProductModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
-            }
-        });
+        url: baseUrl + 'suppliers/getSelectList',
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+        // FIX: Check response.status and response.data
+        if (response.status === 'success' && response.data && response.data.length > 0) {
+            // Populate add modal supplier dropdown
+            var addSupplierSelect = $('#AddNewModal select[name="supplier_id"]');
+            addSupplierSelect.empty();
+            addSupplierSelect.append('<option value="">Select Supplier</option>');
+            $.each(response.data, function(key, supplier) {
+                addSupplierSelect.append('<option value="' + supplier.id + '">' + supplier.name + '</option>');
+            });
+            
+            // Populate edit modal supplier dropdown
+            var editSupplierSelect = $('#editProductModal select[name="supplier_id"]');
+            editSupplierSelect.empty();
+            editSupplierSelect.append('<option value="">Select Supplier</option>');
+            $.each(response.data, function(key, supplier) {
+                editSupplierSelect.append('<option value="' + supplier.id + '">' + supplier.name + '</option>');
+            });
+            console.log('Loaded ' + response.data.length + ' suppliers');
+        } else if (response.status === 'success' && (!response.data || response.data.length === 0)) {
+            // No suppliers found
+            $('#AddNewModal select[name="supplier_id"]').html('<option value="">No suppliers available. Please add suppliers first.</option>');
+            $('#editProductModal select[name="supplier_id"]').html('<option value="">No suppliers available. Please add suppliers first.</option>');
+            console.log('No suppliers found in database');
+        } else {
+            // Error in response
+            $('#AddNewModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
+            $('#editProductModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
+            console.error('Invalid response format:', response);
+        }
+    },
+    error: function(xhr) {
+        console.error('Failed to load suppliers:', xhr);
+        $('#AddNewModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
+        $('#editProductModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
+    }
+    });
     }
 
     // Add New Product Button

@@ -402,7 +402,7 @@ class Products extends BaseController
         
         // Add headers
         fputcsv($output, [
-            'ID', 'Name', 'SKU', 'Category', 'Supplier', 
+            'ID', 'Name', 'Category', 'Supplier', 
             'Cost Price', 'Selling Price', 'Stock', 'Reorder Level', 
             'Status', 'Created At', 'Updated At'
         ]);

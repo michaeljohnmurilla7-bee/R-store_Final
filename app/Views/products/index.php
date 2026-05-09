@@ -115,9 +115,9 @@
                 <label>Cost Price</label>
                 <div class="input-group">
                   <div class="input-group-prepend">
-                    <span class="input-group-text">$</span>
+                    <span class="input-group-text">₱<span>
                   </div>
-                  <input type="number" step="0.01" name="cost_price" class="form-control" value="0.00">
+                  <input type="number" step="0.01" name="cost_price" class="form-control" value="">
                 </div>
               </div>
             </div>
@@ -126,7 +126,7 @@
                 <label>Selling Price <span class="text-danger">*</span></label>
                 <div class="input-group">
                   <div class="input-group-prepend">
-                    <span class="input-group-text">$</span>
+                    <span class="input-group-text">₱<span>
                   </div>
                   <input type="number" step="0.01" name="price" class="form-control" required>
                 </div>
@@ -234,7 +234,7 @@
                 <label>Cost Price</label>
                 <div class="input-group">
                   <div class="input-group-prepend">
-                    <span class="input-group-text">$</span>
+                    <span class="input-group-text">₱<span>
                   </div>
                   <input type="number" step="0.01" name="cost_price" id="cost_price" class="form-control">
                 </div>
@@ -242,10 +242,10 @@
             </div>
             <div class="col-md-4">
               <div class="form-group">
-                <label>Selling Price <span class="text-danger">*</span></label>
+                <label>Selling Price <span class="text-danger">₱</span></label>
                 <div class="input-group">
                   <div class="input-group-prepend">
-                    <span class="input-group-text">$</span>
+                    <span class="input-group-text">₱<span>
                   </div>
                   <input type="number" step="0.01" name="price" id="price" class="form-control" required>
                 </div>
@@ -255,7 +255,7 @@
               <div class="form-group">
                 <label>Current Stock</label>
                 <input type="number" name="stock_qty" id="stock_qty" class="form-control" readonly>
-                <small class="text-muted">Read-only</small>
+                <small class="text-muted ">Read-only</small>
               </div>
             </div>
           </div>

@@ -1,18 +1,27 @@
-// suppliers.js - Complete working version
+// public/js/suppliers/suppliers.js - FIXED VERSION
 $(document).ready(function() {
     console.log('Suppliers JS loaded');
-    console.log('Base URL:', baseUrl);
     
-    // Refresh CSRF token function
+    var baseUrl = window.baseUrl || window.location.origin;
+    baseUrl = baseUrl.replace(/\/$/, '');
+    
+    // CSRF Functions
+    function getCsrfToken() {
+        var tokenHash = $('meta[name="csrf-token-hash"]').attr('content');
+        var tokenName = $('meta[name="csrf-token-name"]').attr('content');
+        return { name: tokenName || 'csrf_test_name', hash: tokenHash || '' };
+    }
+    
     function refreshCSRF() {
         $.ajax({
             url: baseUrl + '/suppliers/refreshCSRF',
             type: 'GET',
             dataType: 'json',
             success: function(response) {
-                if (response.csrf_token && response.csrf_hash) {
+                if (response.csrf_hash) {
                     $('meta[name="csrf-token-name"]').attr('content', response.csrf_token);
                     $('meta[name="csrf-token-hash"]').attr('content', response.csrf_hash);
+                    console.log('CSRF refreshed');
                 }
             }
         });
@@ -26,37 +35,24 @@ $(document).ready(function() {
             "url": baseUrl + "/suppliers/getSuppliers",
             "type": "POST",
             "data": function(d) {
-                // Add CSRF token to request
-                d.csrf_test_name = $('meta[name="csrf-token-hash"]').attr('content');
-                console.log('Sending request with data:', d);
-            },
-            "dataSrc": function(json) {
-                console.log('Data received from server:', json);
-                if (json.data) {
-                    return json.data;
-                }
-                return [];
-            },
-            "error": function(xhr, status, error) {
-                console.log("DataTable Error - Status:", status);
-                console.log("DataTable Error - XHR:", xhr);
-                console.log("DataTable Error - Response:", xhr.responseText);
-                alert('Error loading data. Check console for details.');
+                var csrf = getCsrfToken();
+                d[csrf.name] = csrf.hash;
+                return d;
             }
         },
         "columns": [
             { 
                 "data": null,
                 "render": function(data, type, row, meta) {
-                    return meta.row + 1 + (meta.settings._iDisplayStart);
+                    return meta.row + 1 + meta.settings._iDisplayStart;
                 }
             },
             { "data": "id", "visible": false },
             { "data": "name" },
-            { "data": "contact_person" },
-            { "data": "email" },
-            { "data": "phone" },
-            { "data": "address" },
+            { "data": "contact_person", "defaultContent": "—" },
+            { "data": "email", "defaultContent": "—" },
+            { "data": "phone", "defaultContent": "—" },
+            { "data": "address", "defaultContent": "—" },
             { 
                 "data": "is_active",
                 "render": function(data) {
@@ -70,52 +66,71 @@ $(document).ready(function() {
                     return '<div class="btn-group btn-group-sm">' +
                         '<button class="btn btn-info btn-sm view-supplier" data-id="' + row.id + '"><i class="fa fa-eye"></i></button>' +
                         '<button class="btn btn-warning btn-sm edit-supplier" data-id="' + row.id + '"><i class="fa fa-edit"></i></button>' +
-                        '<button class="btn btn-danger btn-sm delete-supplier" data-id="' + row.id + '" data-name="' + (row.name || '').replace(/'/g, "\\'") + '"><i class="fa fa-trash"></i></button>' +
+                        '<button class="btn btn-danger btn-sm delete-supplier" data-id="' + row.id + '"><i class="fa fa-trash"></i></button>' +
                         '</div>';
                 }
             }
-        ],
-        "order": [[1, 'asc']],
-        "pageLength": 10,
-        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]]
+        ]
     });
     
-    // Add New Supplier
+    // ============ ADD SUPPLIER ============
     $('#addSupplierForm').on('submit', function(e) {
         e.preventDefault();
+        console.log('Add form submitted');
         
-        console.log('Submitting add supplier form');
-        
-        var formData = $(this).serialize();
-        console.log('Form data:', formData);
-        
-        var submitBtn = $('#addSupplierForm button[type="submit"]');
+        var submitBtn = $(this).find('button[type="submit"]');
         submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+        
+        // Get form data as object
+        var formDataObj = {
+            name: $('#addSupplierForm [name="name"]').val(),
+            contact_person: $('#addSupplierForm [name="contact_person"]').val(),
+            email: $('#addSupplierForm [name="email"]').val(),
+            phone: $('#addSupplierForm [name="phone"]').val(),
+            address: $('#addSupplierForm [name="address"]').val(),
+            city: $('#addSupplierForm [name="city"]').val(),
+            state: $('#addSupplierForm [name="state"]').val(),
+            postal_code: $('#addSupplierForm [name="postal_code"]').val(),
+            country: $('#addSupplierForm [name="country"]').val(),
+            tax_number: $('#addSupplierForm [name="tax_number"]').val(),
+            is_active: $('#addSupplierForm [name="is_active"]').val(),
+            notes: $('#addSupplierForm [name="notes"]').val()
+        };
+        
+        // Add CSRF
+        var csrf = getCsrfToken();
+        formDataObj[csrf.name] = csrf.hash;
+        
+        console.log('Sending data:', formDataObj);
         
         $.ajax({
             url: baseUrl + '/suppliers/addSupplier',
             type: 'POST',
-            data: formData,
+            data: formDataObj,
             dataType: 'json',
             success: function(response) {
-                console.log('Add supplier response:', response);
+                console.log('Response:', response);
                 if (response.status === 'success') {
                     $('#AddNewModal').modal('hide');
-                    alert('✅ ' + response.message);
+                    alert('✓ ' + response.message);
                     table.ajax.reload();
                     $('#addSupplierForm')[0].reset();
                     refreshCSRF();
                 } else {
-                    var errorMsg = response.message || 'Error adding supplier';
-                    if (typeof errorMsg === 'object') {
-                        errorMsg = Object.values(errorMsg).join('\n');
-                    }
-                    alert('❌ ' + errorMsg);
+                    let errorMsg = typeof response.message === 'object' ? JSON.stringify(response.message) : response.message;
+                    alert('✗ Error: ' + errorMsg);
                 }
             },
             error: function(xhr) {
-                console.error('Add supplier error:', xhr);
-                alert('❌ Error: ' + xhr.status + ' - ' + xhr.statusText);
+                console.error('AJAX Error:', xhr);
+                let errorMsg = 'Server Error: ';
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    errorMsg += response.message || xhr.statusText;
+                } catch(e) {
+                    errorMsg += xhr.statusText;
+                }
+                alert(errorMsg);
             },
             complete: function() {
                 submitBtn.prop('disabled', false).html('<i class="fa fa-save"></i> Save Supplier');
@@ -123,77 +138,102 @@ $(document).ready(function() {
         });
     });
     
-    // Edit Supplier
+    // ============ EDIT - Load Data ============
     $(document).on('click', '.edit-supplier', function() {
         var id = $(this).data('id');
-        console.log('Edit supplier ID:', id);
+        console.log('Loading supplier ID:', id);
         
         $.ajax({
             url: baseUrl + '/suppliers/getSupplier/' + id,
             type: 'GET',
             dataType: 'json',
             success: function(response) {
-                console.log('Get supplier response:', response);
+                console.log('Supplier data:', response);
                 if (response.status === 'success') {
                     var data = response.data;
                     $('#supplierId').val(data.id);
-                    $('#editSupplierForm #name').val(data.name);
+                    $('#editSupplierForm #name').val(data.name || '');
                     $('#editSupplierForm #contact_person').val(data.contact_person || '');
-                    $('#editSupplierForm #email').val(data.email);
-                    $('#editSupplierForm #phone').val(data.phone);
+                    $('#editSupplierForm #email').val(data.email || '');
+                    $('#editSupplierForm #phone').val(data.phone || '');
                     $('#editSupplierForm #address').val(data.address || '');
                     $('#editSupplierForm #city').val(data.city || '');
                     $('#editSupplierForm #state').val(data.state || '');
                     $('#editSupplierForm #postal_code').val(data.postal_code || '');
                     $('#editSupplierForm #country').val(data.country || '');
                     $('#editSupplierForm #tax_number').val(data.tax_number || '');
-                    $('#editSupplierForm #is_active').val(data.is_active);
+                    $('#editSupplierForm #is_active').val(data.is_active || 1);
                     $('#editSupplierForm #notes').val(data.notes || '');
                     $('#editSupplierModal').modal('show');
                 } else {
-                    alert('❌ Error loading supplier data');
+                    alert('Error: ' + response.message);
                 }
             },
             error: function(xhr) {
-                console.error('Get supplier error:', xhr);
-                alert('❌ Error loading supplier data');
+                console.error('Error:', xhr);
+                alert('Failed to load supplier data');
             }
         });
     });
     
-    // Update Supplier
+    // ============ UPDATE SUPPLIER ============
     $('#editSupplierForm').on('submit', function(e) {
         e.preventDefault();
+        console.log('Update form submitted');
         
-        console.log('Submitting update form');
-        
-        var formData = $(this).serialize();
-        var submitBtn = $('#editSupplierForm button[type="submit"]');
+        var submitBtn = $(this).find('button[type="submit"]');
         submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Updating...');
+        
+        // Get form data as object
+        var formDataObj = {
+            id: $('#supplierId').val(),
+            name: $('#editSupplierForm #name').val(),
+            contact_person: $('#editSupplierForm #contact_person').val(),
+            email: $('#editSupplierForm #email').val(),
+            phone: $('#editSupplierForm #phone').val(),
+            address: $('#editSupplierForm #address').val(),
+            city: $('#editSupplierForm #city').val(),
+            state: $('#editSupplierForm #state').val(),
+            postal_code: $('#editSupplierForm #postal_code').val(),
+            country: $('#editSupplierForm #country').val(),
+            tax_number: $('#editSupplierForm #tax_number').val(),
+            is_active: $('#editSupplierForm #is_active').val(),
+            notes: $('#editSupplierForm #notes').val()
+        };
+        
+        // Add CSRF
+        var csrf = getCsrfToken();
+        formDataObj[csrf.name] = csrf.hash;
+        
+        console.log('Updating with data:', formDataObj);
         
         $.ajax({
             url: baseUrl + '/suppliers/updateSupplier',
             type: 'POST',
-            data: formData,
+            data: formDataObj,
             dataType: 'json',
             success: function(response) {
                 console.log('Update response:', response);
                 if (response.status === 'success') {
                     $('#editSupplierModal').modal('hide');
-                    alert('✅ ' + response.message);
+                    alert('✓ ' + response.message);
                     table.ajax.reload();
                     refreshCSRF();
                 } else {
-                    var errorMsg = response.message || 'Error updating supplier';
-                    if (typeof errorMsg === 'object') {
-                        errorMsg = Object.values(errorMsg).join('\n');
-                    }
-                    alert('❌ ' + errorMsg);
+                    let errorMsg = typeof response.message === 'object' ? JSON.stringify(response.message) : response.message;
+                    alert('✗ Error: ' + errorMsg);
                 }
             },
             error: function(xhr) {
                 console.error('Update error:', xhr);
-                alert('❌ Error updating supplier');
+                let errorMsg = 'Server Error: ';
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    errorMsg += response.message || xhr.statusText;
+                } catch(e) {
+                    errorMsg += xhr.statusText;
+                }
+                alert(errorMsg);
             },
             complete: function() {
                 submitBtn.prop('disabled', false).html('<i class="fa fa-save"></i> Update Supplier');
@@ -201,7 +241,7 @@ $(document).ready(function() {
         });
     });
     
-    // View Supplier
+    // ============ VIEW SUPPLIER ============
     $(document).on('click', '.view-supplier', function() {
         var id = $(this).data('id');
         
@@ -221,90 +261,61 @@ $(document).ready(function() {
                     $('#view_created_at').text(data.created_at || '-');
                     $('#view_updated_at').text(data.updated_at || '-');
                     
-                    var address = [data.address, data.city, data.state, data.postal_code, data.country]
-                        .filter(function(v) { return v && v != ''; })
-                        .join(', ');
-                    $('#view_address').text(address || '-');
+                    var addressParts = [data.address, data.city, data.state, data.postal_code, data.country].filter(function(v) { return v && v != ''; });
+                    $('#view_address').text(addressParts.join(', ') || '-');
                     $('#view_notes').text(data.notes || '-');
                     
                     $('#viewSupplierModal').modal('show');
                 } else {
-                    alert('❌ Error loading supplier details');
+                    alert('Error: ' + response.message);
                 }
             },
             error: function(xhr) {
-                console.error('View error:', xhr);
-                alert('❌ Error loading supplier details');
+                alert('Failed to load supplier details');
             }
         });
     });
     
-    // Delete Supplier
+    // ============ DELETE SUPPLIER ============
     $(document).on('click', '.delete-supplier', function() {
         var id = $(this).data('id');
-        var name = $(this).data('name');
+        var name = $(this).data('name') || 'this supplier';
         
         if (confirm('Are you sure you want to delete "' + name + '"?')) {
-            var csrfHash = $('meta[name="csrf-token-hash"]').attr('content');
+            var csrf = getCsrfToken();
+            var postData = { id: id };
+            postData[csrf.name] = csrf.hash;
             
             $.ajax({
                 url: baseUrl + '/suppliers/deleteSupplier',
                 type: 'POST',
-                data: {
-                    id: id,
-                    csrf_test_name: csrfHash
-                },
+                data: postData,
                 dataType: 'json',
                 success: function(response) {
-                    console.log('Delete response:', response);
                     if (response.status === 'success') {
-                        alert('✅ ' + response.message);
+                        alert('✓ ' + response.message);
                         table.ajax.reload();
                         refreshCSRF();
                     } else {
-                        alert('❌ ' + response.message);
+                        alert('✗ ' + (response.message || 'Error deleting supplier'));
                     }
                 },
                 error: function(xhr) {
-                    console.error('Delete error:', xhr);
-                    alert('❌ Error deleting supplier');
+                    alert('Failed to delete supplier');
                 }
             });
         }
     });
     
-    // Add New button click
+    // ============ BUTTON HANDLERS ============
     $('#addNewSupplierBtn').click(function() {
         $('#addSupplierForm')[0].reset();
         $('#AddNewModal').modal('show');
     });
     
-    // Test the connection immediately
-    console.log('Testing connection to server...');
-    $.ajax({
-        url: baseUrl + '/suppliers/getSuppliers',
-        type: 'POST',
-        data: {
-            draw: 1,
-            start: 0,
-            length: 10
-        },
-        dataType: 'json',
-        success: function(response) {
-            console.log('Connection test SUCCESS!');
-            console.log('Server response:', response);
-            if (response.data && response.data.length > 0) {
-                console.log('Found', response.data.length, 'suppliers in database');
-            } else {
-                console.log('No suppliers found in database');
-            }
-        },
-        error: function(xhr) {
-            console.error('Connection test FAILED!');
-            console.error('Status:', xhr.status);
-            console.error('Status Text:', xhr.statusText);
-            console.error('Response:', xhr.responseText);
-            alert('Cannot connect to server. Please check:\n1. Server is running\n2. Base URL is correct: ' + baseUrl + '\n3. Check browser console for details');
-        }
-    });
+    // Refresh CSRF every 5 minutes
+    setInterval(refreshCSRF, 300000);
+    refreshCSRF();
+    
+    console.log('JS Ready - Add and Edit should work now');
 });
