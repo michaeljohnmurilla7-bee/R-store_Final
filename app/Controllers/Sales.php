@@ -33,8 +33,7 @@ class Sales extends BaseController
     {
         $data = [
             'title' => 'Sales Management',
-            'page_title' => 'Sales Orders',
-            'subtitle' => 'Manage all sales transactions'
+            'page_title' => 'Sales Orders'
         ];
         
         return view('sales/index', $data);
@@ -49,24 +48,7 @@ class Sales extends BaseController
         
         return $this->response->setJSON([
             'success' => true,
-            'customers' => $customers
-        ]);
-    }
-    
-    /**
-     * Get total sales count for dashboard
-     */
-    public function getCount()
-    {
-        $total = $this->salesModel->getTotalCount();
-        $todayTotal = $this->salesModel->getTodayCount();
-        $todayRevenue = $this->salesModel->getTodayTotal();
-        
-        return $this->response->setJSON([
-            'success' => true,
-            'total' => $total,
-            'today_count' => $todayTotal,
-            'today_revenue' => $todayRevenue
+            'customers' => $customers ?: []
         ]);
     }
     
@@ -77,19 +59,16 @@ class Sales extends BaseController
     {   
         $request = service('request');
         
-        // DataTable parameters
         $draw = $request->getPost('draw') ?? 1;
         $start = $request->getPost('start') ?? 0;
         $length = $request->getPost('length') ?? 10;
         $search = $request->getPost('search')['value'] ?? '';
         
-        // Get filters
         $paymentStatus = $request->getPost('payment_status');
-        $orderStatus = $request->getPost('status');
+        $orderStatus = $request->getPost('order_status');
         $startDate = $request->getPost('start_date');
         $endDate = $request->getPost('end_date');
         
-        // Build query
         $db = \Config\Database::connect();
         $builder = $db->table('sales');
         $builder->select('sales.*, customers.name as customer_name')
@@ -100,8 +79,6 @@ class Sales extends BaseController
             $builder->groupStart()
                     ->like('sales.invoice_number', $search)
                     ->orLike('customers.name', $search)
-                    ->orLike('sales.payment_status', $search)
-                    ->orLike('sales.status', $search)
                     ->groupEnd();
         }
         
@@ -115,18 +92,18 @@ class Sales extends BaseController
         }
         
         if (!empty($startDate)) {
-            $builder->where('sales.sale_date >=', $startDate);
+            $builder->where('DATE(sales.sale_date) >=', $startDate);
         }
         
         if (!empty($endDate)) {
-            $builder->where('sales.sale_date <=', $endDate);
+            $builder->where('DATE(sales.sale_date) <=', $endDate);
         }
         
         // Get total count
         $totalRecords = $builder->countAllResults(false);
         
         // Apply ordering
-        $orderColumnIndex = $request->getPost('order')[0]['column'] ?? 0;
+        $orderColumnIndex = $request->getPost('order')[0]['column'] ?? 3;
         $orderDir = $request->getPost('order')[0]['dir'] ?? 'DESC';
         
         $columns = [
@@ -142,8 +119,6 @@ class Sales extends BaseController
         
         $orderBy = $columns[$orderColumnIndex] ?? 'sales.sale_date';
         $builder->orderBy($orderBy, $orderDir);
-        
-        // Apply limits
         $builder->limit((int)$length, (int)$start);
         
         $sales = $builder->get()->getResultArray();
@@ -155,9 +130,9 @@ class Sales extends BaseController
                 'id' => $sale['id'],
                 'invoice_number' => $sale['invoice_number'] ?? 'N/A',
                 'customer_name' => $sale['customer_name'] ?? 'Walk-in Customer',
-                'sale_date' => date('Y-m-d', strtotime($sale['sale_date'])),
-                'total_amount' => (float)$sale['total_amount'],
-                'amount_paid' => (float)$sale['amount_paid'],
+                'sale_date' => date('Y-m-d H:i', strtotime($sale['sale_date'])),
+                'total_amount' => (float)($sale['total_amount'] ?? 0),
+                'amount_paid' => (float)($sale['amount_paid'] ?? 0),
                 'due_amount' => (float)($sale['due_amount'] ?? 0),
                 'payment_status' => $sale['payment_status'] ?? 'unpaid',
                 'status' => $sale['status'] ?? 'pending'
@@ -173,188 +148,144 @@ class Sales extends BaseController
     }
     
     /**
-     * Get single sale data
+     * Get single sale data with items (FIXED)
      */
     public function getSale($id)
     {
-        $sale = $this->salesModel->select('sales.*, customers.name as customer_name, customers.phone as customer_phone, customers.email as customer_email')
+        $sale = $this->salesModel
+            ->select('sales.*, customers.name as customer_name')
             ->join('customers', 'customers.id = sales.customer_id', 'left')
             ->where('sales.id', $id)
             ->first();
         
-        if ($sale) {
-            // Get sale items
-            $items = $this->saleItemsModel->select('sale_items.*, products.name as product_name')
-                ->join('products', 'products.id = sale_items.product_id')
-                ->where('sale_items.sale_id', $id)
-                ->findAll();
-            
+        if (!$sale) {
             return $this->response->setJSON([
-                'success' => true,
-                'data' => $sale,
-                'items' => $items
+                'success' => false,
+                'message' => 'Sale not found'
             ]);
         }
         
-        return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Sale not found'
-        ]);
-    }
-    
-    /**
- * Cancel a sale
- */
-public function cancelSale($id)
-{
-    $sale = $this->salesModel->find($id);
-    if (!$sale) {
-        return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Sale not found'
-        ]);
-    }
-    
-    // Check if already cancelled or completed
-    if ($sale->status === 'cancelled') {
-        return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Sale is already cancelled'
-        ]);
-    }
-    
-    if ($sale->status === 'completed') {
-        return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Completed sales cannot be cancelled'
-        ]);
-    }
-    
-    // Start transaction
-    $db = \Config\Database::connect();
-    $db->transStart();
-    
-    // Return products to stock
-    $items = $this->saleItemsModel->where('sale_id', $id)->findAll();
-    foreach ($items as $item) {
-        $product = $this->productModel->find($item->product_id);
-        if ($product) {
-            $this->productModel->update($item->product_id, [
-                'stock' => $product->stock + $item->quantity
-            ]);
-        }
-    }
-    
-    // Update sale status
-    $result = $this->salesModel->update($id, [
-        'status' => 'cancelled',
-        'payment_status' => 'unpaid'
-    ]);
-    
-    $db->transComplete();
-    
-    if ($db->transStatus() === false || !$result) {
-        return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Failed to cancel sale'
-        ]);
-    }
-    
-    return $this->response->setJSON([
-        'success' => true,
-        'message' => 'Sale cancelled successfully'
-    ]);
-}
-
-    /**
-     * Display create sale page
-     */
-    public function create()
-    {
-        $data = [
-            'title' => 'New Sale',
-            'page_title' => 'Create New Sale',
-            'subtitle' => 'Process a new sale transaction',
-            'products' => $this->productModel->where('stock >', 0)->where('status', 'active')->findAll()
-        ];
+        // Get sale items
+        $items = $this->saleItemsModel
+            ->select('sale_items.*, products.name as product_name')
+            ->join('products', 'products.id = sale_items.product_id')
+            ->where('sale_items.sale_id', $id)
+            ->findAll();
         
-        return view('sales/create', $data);
+        return $this->response->setJSON([
+            'success' => true,
+            'data' => $sale,
+            'items' => $items
+        ]);
     }
     
     /**
-     * Store new sale
+     * Store new sale (FIXED)
      */
     public function store()
     {
-        // Validate request
-        $rules = [
-            'sale_date' => 'required',
-            'total_amount' => 'required|numeric|greater_than[0]',
-            'amount_paid' => 'required|numeric|greater_than_equal_to[0]',
-            'status' => 'required|in_list[pending,completed,cancelled]'
-        ];
+        $request = $this->request;
         
-        if (!$this->validate($rules)) {
+        $totalAmount = (float)$request->getPost('total_amount');
+        $amountPaid = (float)$request->getPost('amount_paid');
+        $discount = (float)$request->getPost('discount') ?: 0;
+        $items = $request->getPost('items');
+        
+        // Validate
+        if (empty($items) || !is_array($items)) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $this->validator->getErrors()
+                'message' => 'Please add at least one product'
             ]);
         }
         
-        // Prepare data
-        $data = [
+        if ($totalAmount <= 0) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Invalid total amount'
+            ]);
+        }
+        
+        $netTotal = $totalAmount - $discount;
+        if ($amountPaid > $netTotal) {
+            $amountPaid = $netTotal;
+        }
+        
+        $db = \Config\Database::connect();
+        $db->transStart();
+        
+        // Prepare sale data
+        $saleData = [
             'user_id' => session()->get('user_id') ?? 1,
-            'customer_id' => $this->request->getPost('customer_id') ?: null,
-            'sale_date' => $this->request->getPost('sale_date'),
-            'total_amount' => $this->request->getPost('total_amount'),
-            'discount' => $this->request->getPost('discount') ?: 0,
-            'amount_paid' => $this->request->getPost('amount_paid'),
-            'status' => $this->request->getPost('status'),
-            'notes' => $this->request->getPost('notes')
+            'customer_id' => $request->getPost('customer_id') ?: null,
+            'sale_date' => $request->getPost('sale_date') ?? date('Y-m-d H:i:s'),
+            'total_amount' => $totalAmount,
+            'discount' => $discount,
+            'amount_paid' => $amountPaid,
+            'status' => $request->getPost('status') ?? 'pending',
+            'notes' => $request->getPost('notes')
         ];
         
-        // Save sale
-        if ($this->salesModel->insert($data)) {
-            $saleId = $this->salesModel->getInsertID();
+        // Insert sale
+        $saleId = $this->salesModel->insert($saleData);
+        
+        if (!$saleId) {
+            $db->transRollback();
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Failed to create sale: ' . implode(', ', $this->salesModel->errors())
+            ]);
+        }
+        
+        // Insert items and update stock
+        foreach ($items as $item) {
+            $quantity = (int)$item['quantity'];
+            $price = (float)$item['price'];
+            $subtotal = $quantity * $price;
             
-            // Save sale items
-            $items = $this->request->getPost('items');
-            if ($items && is_array($items)) {
-                foreach ($items as $item) {
-                    $this->saleItemsModel->insert([
-                        'sale_id' => $saleId,
-                        'product_id' => $item['product_id'],
-                        'quantity' => $item['quantity'],
-                        'unit_price' => $item['price'],
-                        'subtotal' => $item['quantity'] * $item['price']
-                    ]);
-                    
-                    // Update product stock
-                    $product = $this->productModel->find($item['product_id']);
-                    if ($product) {
-                        $this->productModel->update($item['product_id'], [
-                            'stock' => $product->stock - $item['quantity']
-                        ]);
-                    }
-                }
+            // Insert item
+            $itemData = [
+                'sale_id' => $saleId,
+                'product_id' => $item['product_id'],
+                'quantity' => $quantity,
+                'unit_price' => $price,
+                'subtotal' => $subtotal
+            ];
+            
+            if (!$this->saleItemsModel->insert($itemData)) {
+                $db->transRollback();
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Failed to save sale items'
+                ]);
             }
             
+            // Update product stock (using stock_qty)
+            $product = $this->productModel->find($item['product_id']);
+            if ($product) {
+                $newStock = $product['stock_qty'] - $quantity;
+                $this->productModel->update($item['product_id'], ['stock_qty' => $newStock]);
+            }
+        }
+        
+        $db->transComplete();
+        
+        if ($db->transStatus() === false) {
             return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Sale created successfully',
-                'sale_id' => $saleId
+                'success' => false,
+                'message' => 'Transaction failed'
             ]);
         }
         
         return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Failed to create sale'
+            'success' => true,
+            'message' => 'Sale created successfully',
+            'sale_id' => $saleId
         ]);
     }
     
     /**
-     * Update sale
+     * Update sale (FIXED)
      */
     public function update($id)
     {
@@ -369,12 +300,21 @@ public function cancelSale($id)
         $data = [
             'customer_id' => $this->request->getPost('customer_id') ?: null,
             'sale_date' => $this->request->getPost('sale_date'),
-            'total_amount' => $this->request->getPost('total_amount'),
-            'discount' => $this->request->getPost('discount') ?: 0,
-            'amount_paid' => $this->request->getPost('amount_paid'),
+            'discount' => (float)$this->request->getPost('discount') ?: 0,
+            'amount_paid' => (float)$this->request->getPost('amount_paid'),
             'status' => $this->request->getPost('status'),
             'notes' => $this->request->getPost('notes')
         ];
+        
+        // Recalculate total from items if provided
+        $items = $this->request->getPost('items');
+        if ($items && is_array($items)) {
+            $totalAmount = 0;
+            foreach ($items as $item) {
+                $totalAmount += (float)$item['quantity'] * (float)$item['price'];
+            }
+            $data['total_amount'] = $totalAmount;
+        }
         
         if ($this->salesModel->update($id, $data)) {
             return $this->response->setJSON([
@@ -390,7 +330,7 @@ public function cancelSale($id)
     }
     
     /**
-     * Delete sale
+     * Delete sale (FIXED - restore stock)
      */
     public function delete($id)
     {
@@ -402,58 +342,48 @@ public function cancelSale($id)
             ]);
         }
         
-        // Delete sale items first
+        $db = \Config\Database::connect();
+        $db->transStart();
+        
+        // Get items to restore stock
+        $items = $this->saleItemsModel->where('sale_id', $id)->findAll();
+        
+        foreach ($items as $item) {
+            // Restore product stock
+            $product = $this->productModel->find($item->product_id);
+            if ($product) {
+                $newStock = $product['stock_qty'] + $item->quantity;
+                $this->productModel->update($item->product_id, ['stock_qty' => $newStock]);
+            }
+        }
+        
+        // Delete sale items
         $this->saleItemsModel->where('sale_id', $id)->delete();
         
         // Delete sale
-        if ($this->salesModel->delete($id)) {
+        $result = $this->salesModel->delete($id);
+        
+        $db->transComplete();
+        
+        if ($db->transStatus() === false || !$result) {
             return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Sale deleted successfully'
+                'success' => false,
+                'message' => 'Failed to delete sale'
             ]);
         }
         
         return $this->response->setJSON([
-            'success' => false,
-            'message' => 'Failed to delete sale'
+            'success' => true,
+            'message' => 'Sale deleted successfully'
         ]);
     }
     
     /**
-     * Display invoice page
-     */
-    public function invoice($id)
-    {
-        $sale = $this->salesModel->select('sales.*, customers.name as customer_name, customers.phone as customer_phone, customers.email as customer_email, customers.address as customer_address')
-            ->join('customers', 'customers.id = sales.customer_id', 'left')
-            ->where('sales.id', $id)
-            ->first();
-        
-        if (!$sale) {
-            return redirect()->to('/sales')->with('error', 'Sale not found');
-        }
-        
-        $items = $this->saleItemsModel->select('sale_items.*, products.name as product_name')
-            ->join('products', 'products.id = sale_items.product_id')
-            ->where('sale_items.sale_id', $id)
-            ->findAll();
-        
-        $data = [
-            'title' => 'Invoice',
-            'sale' => $sale,
-            'items' => $items,
-            'user' => $this->userModel->find($sale->user_id)
-        ];
-        
-        return view('sales/invoice', $data);
-    }
-    
-    /**
-     * Process payment
+     * Process payment (FIXED)
      */
     public function processPayment($id)
     {
-        $amount = $this->request->getPost('amount');
+        $amount = (float)$this->request->getPost('amount');
         
         if (!$amount || $amount <= 0) {
             return $this->response->setJSON([
@@ -470,8 +400,8 @@ public function cancelSale($id)
             ]);
         }
         
-        $newAmountPaid = $sale->amount_paid + $amount;
         $netAmount = $sale->total_amount - ($sale->discount ?? 0);
+        $newAmountPaid = $sale->amount_paid + $amount;
         
         if ($newAmountPaid > $netAmount) {
             return $this->response->setJSON([
@@ -505,103 +435,117 @@ public function cancelSale($id)
     }
     
     /**
-     * Get sales summary for dashboard
+     * Search products for POS (FIXED)
      */
-    public function getSalesSummary()
+    public function searchProducts($search = null)
     {
-        $today = $this->salesModel->getSalesSummary(date('Y-m-d'));
+        $query = $this->request->getVar('q') ?? $search;
+        
+        if (!$query || $query === 'all') {
+            $products = $this->productModel
+                ->where('is_active', 1)
+                ->where('stock_qty >', 0)
+                ->orderBy('name', 'ASC')
+                ->limit(50)
+                ->findAll();
+        } else {
+            $products = $this->productModel
+                ->groupStart()
+                    ->like('name', $query)
+                    ->orLike('sku', $query)
+                ->groupEnd()
+                ->where('is_active', 1)
+                ->where('stock_qty >', 0)
+                ->orderBy('name', 'ASC')
+                ->limit(50)
+                ->findAll();
+        }
         
         return $this->response->setJSON([
             'success' => true,
-            'today' => $today
+            'products' => $products ?: []
         ]);
     }
     
     /**
-     * Get recent sales for dashboard
+     * Show invoice (FIXED)
      */
-    public function getRecentSales()
+    public function invoice($id)
     {
-        $limit = $this->request->getVar('limit') ?? 10;
-        $sales = $this->salesModel->getRecentSales($limit);
+        $sale = $this->salesModel
+            ->select('sales.*, customers.name as customer_name, customers.phone as customer_phone, customers.email as customer_email, customers.address as customer_address')
+            ->join('customers', 'customers.id = sales.customer_id', 'left')
+            ->where('sales.id', $id)
+            ->first();
         
-        return $this->response->setJSON([
-            'success' => true,
-            'data' => $sales
-        ]);
+        if (!$sale) {
+            return redirect()->to('/sales')->with('error', 'Sale not found');
+        }
+        
+        $items = $this->saleItemsModel
+            ->select('sale_items.*, products.name as product_name')
+            ->join('products', 'products.id = sale_items.product_id')
+            ->where('sale_items.sale_id', $id)
+            ->findAll();
+        
+        $data = [
+            'title' => 'Invoice #' . $sale->invoice_number,
+            'sale' => $sale,
+            'items' => $items
+        ];
+        
+        return view('sales/invoice', $data);
     }
     
     /**
-     * Export sales data
+     * Export sales to CSV
      */
     public function export()
     {
         $startDate = $this->request->getVar('start_date');
         $endDate = $this->request->getVar('end_date');
         
-        $db = \Config\Database::connect();
-        $builder = $db->table('sales');
-        $builder->select('sales.*, customers.name as customer_name')
-                ->join('customers', 'customers.id = sales.customer_id', 'left');
+        $builder = $this->salesModel->select('sales.*, customers.name as customer_name')
+            ->join('customers', 'customers.id = sales.customer_id', 'left');
         
         if ($startDate) {
-            $builder->where('sales.sale_date >=', $startDate);
+            $builder->where('DATE(sales.sale_date) >=', $startDate);
         }
         if ($endDate) {
-            $builder->where('sales.sale_date <=', $endDate);
+            $builder->where('DATE(sales.sale_date) <=', $endDate);
         }
         
-        $sales = $builder->orderBy('sale_date', 'DESC')->get()->getResult();
+        $sales = $builder->orderBy('sale_date', 'DESC')->findAll();
         
         $filename = 'sales_export_' . date('Y-m-d_His') . '.csv';
         
-        header('Content-Type: text/csv');
+        header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         
         $output = fopen('php://output', 'w');
         
+        // Add BOM for UTF-8
+        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+        
         // Headers
-        fputcsv($output, ['ID', 'Invoice No.', 'Customer', 'Date', 'Total Amount', 'Discount', 'Amount Paid', 'Due Amount', 'Payment Status', 'Status', 'Notes']);
+        fputcsv($output, ['Invoice No.', 'Customer', 'Date', 'Total Amount', 'Discount', 'Amount Paid', 'Due Amount', 'Payment Status', 'Status']);
         
         // Data
         foreach ($sales as $sale) {
             fputcsv($output, [
-                $sale->id,
                 $sale->invoice_number,
                 $sale->customer_name ?? 'Walk-in Customer',
                 $sale->sale_date,
-                $sale->total_amount,
-                $sale->discount ?? 0,
-                $sale->amount_paid,
-                $sale->due_amount ?? 0,
+                number_format($sale->total_amount, 2),
+                number_format($sale->discount ?? 0, 2),
+                number_format($sale->amount_paid, 2),
+                number_format($sale->due_amount ?? 0, 2),
                 $sale->payment_status,
-                $sale->status,
-                $sale->notes
+                $sale->status
             ]);
         }
         
         fclose($output);
         exit();
-    }
-    
-    /**
-     * Search products for POS
-     */
-    public function searchProducts($search = null)
-    {
-        $query = $this->request->getVar('q') ?? $search;
-        
-        $products = $this->productModel
-            ->like('name', $query)
-            ->orLike('sku', $query)
-            ->where('stock >', 0)
-            ->where('status', 'active')
-            ->limit(20)
-            ->findAll();
-        
-        return $this->response->setJSON([
-            'success' => true,
-            'products' => $products
-        ]);
     }
 }

@@ -76,11 +76,10 @@
                                 </div>
                             </div>
                             
-                            <!-- Sales Table -->
                             <table id="salesTable" class="table table-bordered table-striped">
                                 <thead>
                                     <tr>
-                                        <th width="50">#</th>
+                                        <th>#</th>
                                         <th>Invoice No.</th>
                                         <th>Customer</th>
                                         <th>Sale Date</th>
@@ -89,7 +88,7 @@
                                         <th class="text-right">Due Amount</th>
                                         <th class="text-center">Payment Status</th>
                                         <th class="text-center">Order Status</th>
-                                        <th width="120" class="text-center">Actions</th>
+                                        <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -117,9 +116,7 @@
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="saleModalTitle">New Sale</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
             </div>
             <form id="saleForm">
                 <?= csrf_field() ?>
@@ -168,13 +165,13 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Amount Paid</label>
-                                <input type="number" name="amount_paid" id="amount_paid" class="form-control" step="0.01" value="0" required>
+                                <input type="number" name="amount_paid" id="amount_paid" class="form-control" step="0.01" value="0">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Order Status</label>
-                                <select name="status" id="status" class="form-control" required>
+                                <select name="status" id="status" class="form-control">
                                     <option value="pending">Pending</option>
                                     <option value="completed">Completed</option>
                                     <option value="cancelled">Cancelled</option>
@@ -209,9 +206,7 @@
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
                 <h5 class="modal-title">Sale Details</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="row">
@@ -229,7 +224,7 @@
                             <tr><th>Discount:</th><td id="view_discount">-</td></tr>
                             <tr><th>Paid:</th><td id="view_paid">-</td></tr>
                             <tr><th>Due:</th><td id="view_due">-</td></tr>
-                         </table>
+                        </table>
                     </div>
                 </div>
                 <div class="row">
@@ -237,7 +232,8 @@
                         <strong>Items:</strong>
                         <table class="table table-bordered mt-2">
                             <thead>
-                                <tr><th>Product</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr>                            </thead>
+                                <tr><th>Product</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr>
+                            </thead>
                             <tbody id="view_items"></tbody>
                         </table>
                     </div>
@@ -263,9 +259,7 @@
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title">Process Payment</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
             </div>
             <form id="paymentForm">
                 <?= csrf_field() ?>
@@ -303,9 +297,7 @@
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title">Delete Sale</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
             </div>
             <div class="modal-body">
                 <p>Are you sure you want to delete this sale?</p>
@@ -326,11 +318,9 @@
         <div class="modal-content">
             <div class="modal-header bg-secondary text-white">
                 <h5 class="modal-title">Export Sales</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
             </div>
-            <form action="<?= base_url('sales/export') ?>" method="get">
+            <form action="<?= base_url('sales/export') ?>" method="get" target="_blank">
                 <div class="modal-body">
                     <div class="form-group">
                         <label>Start Date</label>
@@ -349,21 +339,17 @@
         </div>
     </div>
 </div>
-
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
 <script>
-// Define global variables
-var baseUrl = "<?= base_url() ?>";
-var csrfToken = "<?= csrf_token() ?>";
-var csrfHash = "<?= csrf_hash() ?>";
-
+const baseUrl = "<?= base_url() ?>";
 let selectedProducts = [];
 
 $(document).ready(function() {
     // Set default date
-    $('#sale_date').val(new Date().toISOString().slice(0, 16));
+    const now = new Date();
+    $('#sale_date').val(now.toISOString().slice(0, 16));
     
     // Initialize DataTable
     const table = $('#salesTable').DataTable({
@@ -373,17 +359,12 @@ $(document).ready(function() {
             url: baseUrl + "/sales/getSalesData",
             type: "POST",
             data: function(d) {
-                // FIXED: Use the global csrfToken and csrfHash
-                d[csrfToken] = csrfHash;
                 d.start_date = $('#startDate').val();
                 d.end_date = $('#endDate').val();
                 d.payment_status = $('#paymentStatus').val();
-                d.status = $('#orderStatus').val();
+                d.order_status = $('#orderStatus').val();
+                d.<?= csrf_token() ?> = '<?= csrf_hash() ?>';
                 return d;
-            },
-            error: function(xhr, status, error) {
-                console.log("DataTable Ajax Error:", xhr.responseText);
-                alert("Error loading sales data. Please check console for details.");
             }
         },
         columns: [
@@ -396,43 +377,31 @@ $(document).ready(function() {
             { data: "due_amount", render: d => '₱ ' + parseFloat(d).toFixed(2), className: "text-right" },
             { data: "payment_status", render: getPaymentBadge, className: "text-center" },
             { data: "status", render: getStatusBadge, className: "text-center" },
-            { data: null, render: (data) => getActions(data), orderable: false, className: "text-center" }
+            { data: null, render: getActions, orderable: false, className: "text-center" }
         ],
         order: [[3, "DESC"]],
-        drawCallback: function() {
-            updateTotals();
-        }
+        drawCallback: function() { updateTotals(); }
     });
     
     function getPaymentBadge(status) {
-        const badges = {
-            'paid': '<span class="badge badge-success">Paid</span>',
-            'partial': '<span class="badge badge-warning">Partial</span>',
-            'unpaid': '<span class="badge badge-danger">Unpaid</span>'
-        };
-        return badges[status] || '<span class="badge badge-secondary">' + status + '</span>';
+        const badges = { 'paid': 'success', 'partial': 'warning', 'unpaid': 'danger' };
+        return `<span class="badge badge-${badges[status] || 'secondary'}">${status || 'N/A'}</span>`;
     }
     
     function getStatusBadge(status) {
-        const badges = {
-            'completed': '<span class="badge badge-success">Completed</span>',
-            'pending': '<span class="badge badge-warning">Pending</span>',
-            'cancelled': '<span class="badge badge-danger">Cancelled</span>'
-        };
-        return badges[status] || '<span class="badge badge-secondary">' + status + '</span>';
+        const badges = { 'completed': 'success', 'pending': 'warning', 'cancelled': 'danger' };
+        return `<span class="badge badge-${badges[status] || 'secondary'}">${status || 'N/A'}</span>`;
     }
     
     function getActions(row) {
-        let buttons = `
-            <button class="btn btn-sm btn-info view-sale" data-id="${row.id}" title="View"><i class="fa fa-eye"></i></button>
-            <button class="btn btn-sm btn-warning edit-sale" data-id="${row.id}" title="Edit"><i class="fa fa-edit"></i></button>
-            <a href="${baseUrl}/sales/invoice/${row.id}" class="btn btn-sm btn-secondary" target="_blank" title="Print"><i class="fa fa-print"></i></a>
+        return `
+            <button class="btn btn-sm btn-info view-sale" data-id="${row.id}"><i class="fa fa-eye"></i></button>
+            <button class="btn btn-sm btn-warning edit-sale" data-id="${row.id}"><i class="fa fa-edit"></i></button>
+            <a href="${baseUrl}/sales/invoice/${row.id}" class="btn btn-sm btn-secondary" target="_blank"><i class="fa fa-print"></i></a>
+            ${row.payment_status !== 'paid' && row.status !== 'cancelled' ? 
+                `<button class="btn btn-sm btn-success pay-sale" data-id="${row.id}" data-invoice="${row.invoice_number}" data-customer="${row.customer_name}" data-due="${row.due_amount}"><i class="fa fa-money"></i></button>` : ''}
+            <button class="btn btn-sm btn-danger delete-sale" data-id="${row.id}"><i class="fa fa-trash"></i></button>
         `;
-        if (row.payment_status !== 'paid' && row.status !== 'cancelled') {
-            buttons += `<button class="btn btn-sm btn-success pay-sale" data-id="${row.id}" data-invoice="${row.invoice_number}" data-customer="${row.customer_name}" data-due="${row.due_amount}" title="Pay"><i class="fa fa-money"></i></button>`;
-        }
-        buttons += `<button class="btn btn-sm btn-danger delete-sale" data-id="${row.id}" title="Delete"><i class="fa fa-trash"></i></button>`;
-        return buttons;
     }
     
     function updateTotals() {
@@ -442,43 +411,42 @@ $(document).ready(function() {
             totalPaid += parseFloat(row.amount_paid);
             totalDue += parseFloat(row.due_amount);
         });
-        $('#totalAmount').html('<strong>₱ ' + totalAmount.toFixed(2) + '</strong>');
-        $('#totalPaid').html('<strong>₱ ' + totalPaid.toFixed(2) + '</strong>');
-        $('#totalDue').html('<strong>₱ ' + totalDue.toFixed(2) + '</strong>');
+        $('#totalAmount').html(`<strong>₱ ${totalAmount.toFixed(2)}</strong>`);
+        $('#totalPaid').html(`<strong>₱ ${totalPaid.toFixed(2)}</strong>`);
+        $('#totalDue').html(`<strong>₱ ${totalDue.toFixed(2)}</strong>`);
     }
     
     // Load customers
     function loadCustomers() {
-        if ($('#customer_id option').length <= 1) {
-            $.ajax({
-                url: baseUrl + "/sales/getCustomers",
-                type: "GET",
-                data: { [csrfToken]: csrfHash },
-                success: function(response) {
-                    if (response.success) {
-                        response.customers.forEach(c => {
-                            $('#customer_id').append(`<option value="${c.id}">${c.name} (${c.phone || 'No phone'})</option>`);
-                        });
-                    }
+        $.ajax({
+            url: baseUrl + "/sales/getCustomers",
+            type: "GET",
+            success: function(response) {
+                if (response.success && response.customers) {
+                    $('#customer_id').html('<option value="">Walk-in Customer</option>');
+                    response.customers.forEach(c => {
+                        $('#customer_id').append(`<option value="${c.id}">${c.name} ${c.phone ? '(' + c.phone + ')' : ''}</option>`);
+                    });
                 }
-            });
-        }
+            }
+        });
     }
     
-    // CRUD Operations
+    // New Sale
     $('#addNewSaleBtn').click(function() {
         resetForm();
         loadCustomers();
+        $('#sale_id').val('');
         $('#saleModalTitle').text('New Sale');
         $('#saleModal').modal('show');
     });
     
+    // Edit Sale
     $(document).on('click', '.edit-sale', function() {
         const id = $(this).data('id');
         $.ajax({
             url: baseUrl + "/sales/getSale/" + id,
             type: "GET",
-            data: { [csrfToken]: csrfHash },
             success: function(response) {
                 if (response.success) {
                     populateForm(response.data, response.items);
@@ -492,12 +460,12 @@ $(document).ready(function() {
         });
     });
     
+    // View Sale
     $(document).on('click', '.view-sale', function() {
         const id = $(this).data('id');
         $.ajax({
             url: baseUrl + "/sales/getSale/" + id,
             type: "GET",
-            data: { [csrfToken]: csrfHash },
             success: function(response) {
                 if (response.success) {
                     displaySale(response.data, response.items);
@@ -507,14 +475,17 @@ $(document).ready(function() {
         });
     });
     
+    // Pay Sale
     $(document).on('click', '.pay-sale', function() {
         $('#payment_sale_id').val($(this).data('id'));
         $('#payment_invoice').val($(this).data('invoice'));
         $('#payment_customer').val($(this).data('customer'));
         $('#payment_due').val('₱ ' + parseFloat($(this).data('due')).toFixed(2));
+        $('#payment_amount').val('');
         $('#paymentModal').modal('show');
     });
     
+    // Delete Sale
     $(document).on('click', '.delete-sale', function() {
         $('#delete_sale_id').val($(this).data('id'));
         $('#deleteModal').modal('show');
@@ -525,7 +496,7 @@ $(document).ready(function() {
         $.ajax({
             url: baseUrl + "/sales/delete/" + id,
             type: 'DELETE',
-            data: { [csrfToken]: csrfHash },
+            data: { '<?= csrf_token() ?>': '<?= csrf_hash() ?>' },
             success: function(response) {
                 if (response.success) {
                     $('#deleteModal').modal('hide');
@@ -543,22 +514,30 @@ $(document).ready(function() {
         const saleId = $('#payment_sale_id').val();
         const amount = $('#payment_amount').val();
         
-        let postData = { amount: amount };
-        postData[csrfToken] = csrfHash;
-        
-        $.post(baseUrl + "/sales/processPayment/" + saleId, postData, function(response) {
-            if (response.success) {
-                $('#paymentModal').modal('hide');
-                $('#salesTable').DataTable().ajax.reload();
-                Swal.fire('Success', response.message, 'success');
-            } else {
-                Swal.fire('Error', response.message, 'error');
+        $.ajax({
+            url: baseUrl + "/sales/processPayment/" + saleId,
+            type: "POST",
+            data: { amount: amount, '<?= csrf_token() ?>': '<?= csrf_hash() ?>' },
+            success: function(response) {
+                if (response.success) {
+                    $('#paymentModal').modal('hide');
+                    $('#salesTable').DataTable().ajax.reload();
+                    Swal.fire('Success', response.message, 'success');
+                } else {
+                    Swal.fire('Error', response.message, 'error');
+                }
             }
         });
     });
     
     $('#saleForm').submit(function(e) {
         e.preventDefault();
+        
+        if (selectedProducts.length === 0) {
+            Swal.fire('Error', 'Please add at least one product', 'error');
+            return;
+        }
+        
         const saleId = $('#sale_id').val();
         const url = saleId ? baseUrl + "/sales/update/" + saleId : baseUrl + "/sales/store";
         
@@ -570,42 +549,49 @@ $(document).ready(function() {
             status: $('#status').val(),
             notes: $('#notes').val(),
             items: selectedProducts,
-            total_amount: calculateTotal()
+            total_amount: calculateTotal(),
+            '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
         };
-        formData[csrfToken] = csrfHash;
         
-        $.post(url, formData, function(response) {
-            if (response.success) {
-                $('#saleModal').modal('hide');
-                $('#salesTable').DataTable().ajax.reload();
-                Swal.fire('Success', response.message, 'success');
-                resetForm();
-            } else {
-                Swal.fire('Error', response.message, 'error');
+        $.ajax({
+            url: url,
+            type: "POST",
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    $('#saleModal').modal('hide');
+                    $('#salesTable').DataTable().ajax.reload();
+                    Swal.fire('Success', response.message, 'success');
+                    resetForm();
+                } else {
+                    Swal.fire('Error', response.message, 'error');
+                }
+            },
+            error: function(xhr) {
+                Swal.fire('Error', 'Failed to save sale. Check console.', 'error');
+                console.log(xhr.responseText);
             }
         });
     });
     
-    // Product management
+    // Add Product
     $('#addProductBtn').click(function() {
-        // Load products
         $.ajax({
             url: baseUrl + "/sales/searchProducts/all",
             type: "GET",
-            data: { [csrfToken]: csrfHash },
             success: function(response) {
-                if (response.success) {
+                if (response.success && response.products.length > 0) {
                     let options = '<option value="">Select Product</option>';
                     response.products.forEach(p => {
-                        options += `<option value="${p.id}" data-price="${p.price}">${p.name} - ₱${p.price} (Stock: ${p.stock})</option>`;
+                        options += `<option value="${p.id}" data-price="${p.price}" data-stock="${p.stock_qty}">${p.name} - ₱${parseFloat(p.price).toFixed(2)} (Stock: ${p.stock_qty})</option>`;
                     });
                     
                     Swal.fire({
                         title: 'Add Product',
                         html: `
-                            <select id="product_select" class="swal2-select" style="width:100%">${options}</select>
-                            <input type="number" id="product_qty" class="swal2-input" placeholder="Quantity" min="1" value="1">
-                            <input type="number" id="product_price" class="swal2-input" placeholder="Price" step="0.01">
+                            <select id="product_select" class="form-control mb-2">${options}</select>
+                            <input type="number" id="product_qty" class="form-control" placeholder="Quantity" min="1" value="1">
+                            <input type="number" id="product_price" class="form-control mt-2" placeholder="Price" step="0.01">
                         `,
                         showCancelButton: true,
                         confirmButtonText: 'Add',
@@ -613,87 +599,92 @@ $(document).ready(function() {
                             $('#product_select').on('change', function() {
                                 $('#product_price').val($(this).find(':selected').data('price'));
                             });
+                            $('#product_select').trigger('change');
                         },
                         preConfirm: () => {
                             const productId = $('#product_select').val();
                             const quantity = parseInt($('#product_qty').val());
                             const price = parseFloat($('#product_price').val());
+                            const stock = parseInt($('#product_select option:selected').data('stock'));
                             const name = $('#product_select option:selected').text().split(' - ')[0];
-                            if (!productId || !quantity || !price) {
-                                Swal.showValidationMessage('Please fill all fields');
-                                return false;
-                            }
+                            
+                            if (!productId) return Swal.showValidationMessage('Select a product');
+                            if (!quantity || quantity < 1) return Swal.showValidationMessage('Enter valid quantity');
+                            if (quantity > stock) return Swal.showValidationMessage(`Only ${stock} in stock`);
+                            if (!price || price <= 0) return Swal.showValidationMessage('Enter valid price');
+                            
                             return { productId, name, quantity, price };
                         }
                     }).then(result => {
                         if (result.isConfirmed) {
-                            selectedProducts.push({
-                                product_id: result.value.productId,
-                                name: result.value.name,
-                                quantity: result.value.quantity,
-                                price: result.value.price
-                            });
+                            const existing = selectedProducts.findIndex(p => p.product_id == result.value.productId);
+                            if (existing !== -1) {
+                                selectedProducts[existing].quantity += result.value.quantity;
+                            } else {
+                                selectedProducts.push(result.value);
+                            }
                             renderProducts();
                             updateTotalInfo();
                         }
                     });
+                } else {
+                    Swal.fire('Info', 'No products available', 'info');
                 }
             }
         });
     });
     
     function renderProducts() {
-        let html = '';
+        let html = '<div class="table-responsive"><table class="table table-sm table-bordered"><thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Subtotal</th><th></th></tr></thead><tbody>';
         selectedProducts.forEach((p, i) => {
-            html += `
-                <div class="row mb-2">
-                    <div class="col-md-5"><input type="text" class="form-control" value="${p.name}" readonly></div>
-                    <div class="col-md-2"><input type="number" class="form-control qty-input" data-index="${i}" value="${p.quantity}"></div>
-                    <div class="col-md-3"><input type="number" class="form-control price-input" data-index="${i}" value="${p.price}" step="0.01"></div>
-                    <div class="col-md-2"><button type="button" class="btn btn-danger btn-sm remove-product" data-index="${i}"><i class="fa fa-trash"></i></button></div>
-                </div>
-            `;
+            html += `<tr>
+                <td>${p.name}</td>
+                <td><input type="number" class="form-control form-control-sm qty-input" data-index="${i}" value="${p.quantity}" min="1" style="width:80px"></td>
+                <td><input type="number" class="form-control form-control-sm price-input" data-index="${i}" value="${p.price}" step="0.01" style="width:100px"></td>
+                <td class="text-right">₱ ${(p.quantity * p.price).toFixed(2)}</td>
+                <td><button class="btn btn-sm btn-danger remove-product" data-index="${i}"><i class="fa fa-trash"></i></button></td>
+            </tr>`;
         });
+        html += '</tbody></table></div>';
         $('#productsList').html(html || '<div class="alert alert-info">No products added</div>');
         
         $('.qty-input').off('change').on('change', function() {
             const idx = $(this).data('index');
-            selectedProducts[idx].quantity = parseInt($(this).val());
+            selectedProducts[idx].quantity = parseInt($(this).val()) || 1;
+            renderProducts();
             updateTotalInfo();
         });
         
         $('.price-input').off('change').on('change', function() {
             const idx = $(this).data('index');
-            selectedProducts[idx].price = parseFloat($(this).val());
+            selectedProducts[idx].price = parseFloat($(this).val()) || 0;
+            renderProducts();
             updateTotalInfo();
         });
         
         $('.remove-product').off('click').on('click', function() {
-            const idx = $(this).data('index');
-            selectedProducts.splice(idx, 1);
+            selectedProducts.splice($(this).data('index'), 1);
             renderProducts();
             updateTotalInfo();
         });
     }
     
     function calculateTotal() {
-        let subtotal = selectedProducts.reduce((sum, p) => sum + (p.quantity * p.price), 0);
-        return subtotal - parseFloat($('#discount').val() || 0);
+        const subtotal = selectedProducts.reduce((sum, p) => sum + (p.quantity * p.price), 0);
+        return subtotal - (parseFloat($('#discount').val()) || 0);
     }
     
     function updateTotalInfo() {
         const subtotal = selectedProducts.reduce((sum, p) => sum + (p.quantity * p.price), 0);
-        const discount = parseFloat($('#discount').val() || 0);
+        const discount = parseFloat($('#discount').val()) || 0;
         const total = subtotal - discount;
-        const paid = parseFloat($('#amount_paid').val() || 0);
-        const due = total - paid;
-        $('#totalInfo').html(`Subtotal: ₱${subtotal.toFixed(2)} | Discount: ₱${discount.toFixed(2)} | Total: ₱${total.toFixed(2)} | Paid: ₱${paid.toFixed(2)} | Due: ₱${due.toFixed(2)}`);
+        const paid = parseFloat($('#amount_paid').val()) || 0;
+        $('#totalInfo').html(`Subtotal: ₱${subtotal.toFixed(2)} | Discount: ₱${discount.toFixed(2)} | Total: ₱${total.toFixed(2)} | Paid: ₱${paid.toFixed(2)} | Due: ₱${(total - paid).toFixed(2)}`);
     }
     
     function resetForm() {
         $('#sale_id').val('');
         $('#customer_id').val('');
-        $('#sale_date').val(new Date().toISOString().slice(0, 16));
         $('#discount').val(0);
         $('#amount_paid').val(0);
         $('#status').val('pending');
@@ -706,10 +697,11 @@ $(document).ready(function() {
     function populateForm(sale, items) {
         $('#sale_id').val(sale.id);
         $('#customer_id').val(sale.customer_id || '');
-        $('#sale_date').val(sale.sale_date.substring(0, 16));
-        $('#discount').val(sale.discount);
-        $('#amount_paid').val(sale.amount_paid);
-        $('#status').val(sale.status);
+        let saleDate = sale.sale_date.replace(' ', 'T').substring(0, 16);
+        $('#sale_date').val(saleDate);
+        $('#discount').val(sale.discount || 0);
+        $('#amount_paid').val(sale.amount_paid || 0);
+        $('#status').val(sale.status || 'pending');
         $('#notes').val(sale.notes || '');
         selectedProducts = items.map(i => ({
             product_id: i.product_id,
@@ -734,7 +726,7 @@ $(document).ready(function() {
         
         let html = '';
         items.forEach(i => {
-            html += `<tr><td>${i.product_name}</td><td>${i.quantity}</td><td>₱ ${parseFloat(i.unit_price).toFixed(2)}</td><td>₱ ${parseFloat(i.subtotal).toFixed(2)}</td></tr>`;
+            html += `<tr><td>${i.product_name}</td><td class="text-center">${i.quantity}</td><td class="text-right">₱ ${parseFloat(i.unit_price).toFixed(2)}</td><td class="text-right">₱ ${parseFloat(i.subtotal).toFixed(2)}</td></tr>`;
         });
         $('#view_items').html(html);
         $('#printInvoiceBtn').attr('href', `${baseUrl}/sales/invoice/${sale.id}`);
@@ -744,7 +736,6 @@ $(document).ready(function() {
     $('#filterBtn').click(() => $('#filterRow').slideToggle());
     $('#startDate, #endDate, #paymentStatus, #orderStatus').on('change', () => $('#salesTable').DataTable().ajax.reload());
     $('#exportBtn').click(() => $('#exportModal').modal('show'));
-    
     $('#discount, #amount_paid').on('input', updateTotalInfo);
 });
 </script>

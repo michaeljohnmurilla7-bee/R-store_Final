@@ -107,6 +107,36 @@ class ProductsModel extends Model
             ->findAll();
     }
 
+    // Add these methods to your ProductsModel.php
+
+/**
+ * Get active products (for dropdowns)
+ */
+public function getActiveProducts()
+{
+    return $this->where('is_active', 1)
+                ->where('stock_qty >', 0)
+                ->orderBy('name', 'ASC')
+                ->findAll();
+}
+
+/**
+ * Search products with stock > 0 (for POS)
+ */
+public function searchAvailableProducts($keyword)
+{
+    $builder = $this->select('products.*, categories.name as category_name')
+        ->join('categories', 'categories.id = products.category_id', 'left')
+        ->groupStart()
+            ->like('products.name', $keyword)
+            ->orLike('products.sku', $keyword)
+        ->groupEnd()
+        ->where('products.is_active', 1)
+        ->where('products.stock_qty >', 0);
+    
+    return $builder->limit(20)->findAll();
+}
+
     // --------------------------------------------------------------------
     // Get out of stock products
     // --------------------------------------------------------------------
