@@ -59,6 +59,8 @@ $routes->group('products', function($routes) {
     $routes->delete('delete/(:num)', 'Products::delete/$1');
     $routes->post('fetchRecords', 'Products::fetchRecords');
     $routes->get('json', 'Products::jsonList');
+
+    $routes->post('reactivate/(:num)', 'Products::reactivate/$1');
 });
 
 // ===========================================================================

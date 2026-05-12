@@ -33,7 +33,7 @@ $(document).ready(function() {
         "processing": true,
         "serverSide": false,
         "ajax": {
-            "url": baseUrl + 'products/getSuppliersData', // You'll need to create this endpoint
+            "url": baseUrl + 'products/getSuppliersData',
             "type": "GET",
             "dataType": "json",
             "dataSrc": function(json) {
@@ -89,7 +89,7 @@ $(document).ready(function() {
             {
                 "data": null,
                 "render": function(data) {
-                    return `
+                    let buttons = `
                         <div class="btn-group btn-group-sm">
                             <button class="btn btn-info view-product" data-id="${data.id}" title="View">
                                 <i class="fa fa-eye"></i>
@@ -100,11 +100,23 @@ $(document).ready(function() {
                             <button class="btn btn-success adjust-stock" data-id="${data.id}" data-name="${data.name}" title="Adjust Stock">
                                 <i class="fa fa-exchange-alt"></i>
                             </button>
-                            <button class="btn btn-danger delete-product" data-id="${data.id}" title="Delete">
-                                <i class="fa fa-trash"></i>
-                            </button>
-                        </div>
                     `;
+                    
+                    // Show different button based on status
+                    if (data.is_active == 0) {
+                        // Inactive product - Show Reactivate button
+                        buttons += `<button class="btn btn-primary reactivate-product" data-id="${data.id}" data-name="${data.name}" title="Reactivate">
+                                        <i class="fa fa-sync-alt"></i> Reactivate
+                                    </button>`;
+                    } else {
+                        // Active product - Show Delete button
+                        buttons += `<button class="btn btn-danger delete-product" data-id="${data.id}" title="Delete">
+                                        <i class="fa fa-trash"></i>
+                                    </button>`;
+                    }
+                    
+                    buttons += `</div>`;
+                    return buttons;
                 }
             }
         ],
@@ -148,53 +160,47 @@ $(document).ready(function() {
         
         // Load suppliers
         $.ajax({
-        url: baseUrl + 'suppliers/getSelectList',
-        type: 'GET',
-        dataType: 'json',
-        success: function(response) {
-        // FIX: Check response.status and response.data
-        if (response.status === 'success' && response.data && response.data.length > 0) {
-            // Populate add modal supplier dropdown
-            var addSupplierSelect = $('#AddNewModal select[name="supplier_id"]');
-            addSupplierSelect.empty();
-            addSupplierSelect.append('<option value="">Select Supplier</option>');
-            $.each(response.data, function(key, supplier) {
-                addSupplierSelect.append('<option value="' + supplier.id + '">' + supplier.name + '</option>');
-            });
-            
-            // Populate edit modal supplier dropdown
-            var editSupplierSelect = $('#editProductModal select[name="supplier_id"]');
-            editSupplierSelect.empty();
-            editSupplierSelect.append('<option value="">Select Supplier</option>');
-            $.each(response.data, function(key, supplier) {
-                editSupplierSelect.append('<option value="' + supplier.id + '">' + supplier.name + '</option>');
-            });
-            console.log('Loaded ' + response.data.length + ' suppliers');
-        } else if (response.status === 'success' && (!response.data || response.data.length === 0)) {
-            // No suppliers found
-            $('#AddNewModal select[name="supplier_id"]').html('<option value="">No suppliers available. Please add suppliers first.</option>');
-            $('#editProductModal select[name="supplier_id"]').html('<option value="">No suppliers available. Please add suppliers first.</option>');
-            console.log('No suppliers found in database');
-        } else {
-            // Error in response
-            $('#AddNewModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
-            $('#editProductModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
-            console.error('Invalid response format:', response);
-        }
-    },
-    error: function(xhr) {
-        console.error('Failed to load suppliers:', xhr);
-        $('#AddNewModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
-        $('#editProductModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
-    }
-    });
+            url: baseUrl + 'suppliers/getSelectList',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success' && response.data && response.data.length > 0) {
+                    var addSupplierSelect = $('#AddNewModal select[name="supplier_id"]');
+                    addSupplierSelect.empty();
+                    addSupplierSelect.append('<option value="">Select Supplier</option>');
+                    $.each(response.data, function(key, supplier) {
+                        addSupplierSelect.append('<option value="' + supplier.id + '">' + supplier.name + '</option>');
+                    });
+                    
+                    var editSupplierSelect = $('#editProductModal select[name="supplier_id"]');
+                    editSupplierSelect.empty();
+                    editSupplierSelect.append('<option value="">Select Supplier</option>');
+                    $.each(response.data, function(key, supplier) {
+                        editSupplierSelect.append('<option value="' + supplier.id + '">' + supplier.name + '</option>');
+                    });
+                    console.log('Loaded ' + response.data.length + ' suppliers');
+                } else if (response.status === 'success' && (!response.data || response.data.length === 0)) {
+                    $('#AddNewModal select[name="supplier_id"]').html('<option value="">No suppliers available. Please add suppliers first.</option>');
+                    $('#editProductModal select[name="supplier_id"]').html('<option value="">No suppliers available. Please add suppliers first.</option>');
+                    console.log('No suppliers found in database');
+                } else {
+                    $('#AddNewModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
+                    $('#editProductModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
+                    console.error('Invalid response format:', response);
+                }
+            },
+            error: function(xhr) {
+                console.error('Failed to load suppliers:', xhr);
+                $('#AddNewModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
+                $('#editProductModal select[name="supplier_id"]').html('<option value="">Error loading suppliers</option>');
+            }
+        });
     }
 
     // Add New Product Button
     $('#addNewProductBtn').on('click', function(e) {
         e.preventDefault();
         $('#addProductForm')[0].reset();
-        // Refresh dropdowns
         loadCategoriesAndSuppliers();
         $('#AddNewModal').modal('show');
     });
@@ -206,7 +212,6 @@ $(document).ready(function() {
         var submitBtn = form.find('button[type="submit"]');
         var originalText = submitBtn.html();
         
-        // Disable button and show loading
         submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
         
         $.ajax({
@@ -218,11 +223,10 @@ $(document).ready(function() {
                 if (response.status === 'success') {
                     $('#AddNewModal').modal('hide');
                     showToast('success', response.message || 'Product added successfully!');
-                    dataTable.ajax.reload(null, false); // Reload table data
-                    form[0].reset(); // Reset form
+                    dataTable.ajax.reload(null, false);
+                    form[0].reset();
                 } else {
                     if (response.errors) {
-                        // Display validation errors
                         $.each(response.errors, function(key, value) {
                             var input = form.find('[name="' + key + '"]');
                             input.addClass('is-invalid');
@@ -239,7 +243,6 @@ $(document).ready(function() {
                 showToast('error', 'Server error occurred. Please try again.');
             },
             complete: function() {
-                // Re-enable button and restore text
                 submitBtn.prop('disabled', false).html(originalText);
             }
         });
@@ -257,13 +260,12 @@ $(document).ready(function() {
                 if (response.status === 'success') {
                     var product = response.data;
                     
-                    // Populate view modal
                     $('#view_name').text(product.name || '-');
                     $('#view_sku').text(product.sku || '-');
                     $('#view_category').text(product.category_name || '-');
                     $('#view_supplier').text(product.supplier_name || '-');
-                    $('#view_cost_price').text(product.cost_price ? '$' + parseFloat(product.cost_price).toFixed(2) : '$0.00');
-                    $('#view_price').text(product.price ? '$' + parseFloat(product.price).toFixed(2) : '$0.00');
+                    $('#view_cost_price').text(product.cost_price ? '₱' + parseFloat(product.cost_price).toFixed(2) : '₱0.00');
+                    $('#view_price').text(product.price ? '₱' + parseFloat(product.price).toFixed(2) : '₱0.00');
                     $('#view_stock_qty').text(product.stock_qty || '0');
                     $('#view_reorder_level').text(product.reorder_level || '0');
                     $('#view_status').html(product.is_active == 1 ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>');
@@ -295,7 +297,6 @@ $(document).ready(function() {
                 if (response.status === 'success') {
                     var product = response.data;
                     
-                    // Populate edit modal
                     $('#productId').val(product.id);
                     $('#name').val(product.name);
                     $('#sku').val(product.sku);
@@ -328,7 +329,6 @@ $(document).ready(function() {
         var submitBtn = form.find('button[type="submit"]');
         var originalText = submitBtn.html();
         
-        // Disable button and show loading
         submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Updating...');
         
         $.ajax({
@@ -340,10 +340,9 @@ $(document).ready(function() {
                 if (response.status === 'success') {
                     $('#editProductModal').modal('hide');
                     showToast('success', response.message || 'Product updated successfully!');
-                    dataTable.ajax.reload(null, false); // Reload table data
+                    dataTable.ajax.reload(null, false);
                 } else {
                     if (response.errors) {
-                        // Display validation errors
                         $.each(response.errors, function(key, value) {
                             var input = form.find('[name="' + key + '"]');
                             input.addClass('is-invalid');
@@ -360,7 +359,6 @@ $(document).ready(function() {
                 showToast('error', 'Server error occurred. Please try again.');
             },
             complete: function() {
-                // Re-enable button and restore text
                 submitBtn.prop('disabled', false).html(originalText);
             }
         });
@@ -385,7 +383,6 @@ $(document).ready(function() {
         var submitBtn = form.find('button[type="submit"]');
         var originalText = submitBtn.html();
         
-        // Disable button and show loading
         submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Processing...');
         
         $.ajax({
@@ -397,7 +394,7 @@ $(document).ready(function() {
                 if (response.status === 'success') {
                     $('#stockAdjustmentModal').modal('hide');
                     showToast('success', response.message || 'Stock adjusted successfully!');
-                    dataTable.ajax.reload(null, false); // Reload table data
+                    dataTable.ajax.reload(null, false);
                 } else {
                     showToast('error', response.message || 'Failed to adjust stock.');
                 }
@@ -407,52 +404,88 @@ $(document).ready(function() {
                 showToast('error', 'Server error occurred. Please try again.');
             },
             complete: function() {
-                // Re-enable button and restore text
                 submitBtn.prop('disabled', false).html(originalText);
             }
         });
     });
 
- // Delete Product - FIXED VERSION
-  $(document).on('click', '.delete-product', function() {
-    var id = $(this).data('id');
-    var productName = $(this).closest('tr').find('td:eq(2)').text();
-    
-    if (confirm('Are you sure you want to delete product "' + productName + '"? This action cannot be undone.')) {
-        // Get CSRF values from meta tags (NO PHP CODE IN .JS FILE)
-        var csrfTokenName = $('meta[name="csrf-token-name"]').attr('content');
-        var csrfHash = $('meta[name="csrf-token-hash"]').attr('content');
+    // Delete Product (Deactivate for products with sales)
+    $(document).on('click', '.delete-product', function() {
+        var id = $(this).data('id');
+        var productName = $(this).closest('tr').find('td:eq(2)').text();
         
-        var postData = {
-            '_method': 'DELETE'
-        };
-        // Add CSRF token dynamically
-        postData[csrfTokenName] = csrfHash;
+        if (confirm('Deactivate product "' + productName + '"? This product will become inactive and cannot be sold.')) {
+            var csrfTokenName = $('meta[name="csrf-token-name"]').attr('content');
+            var csrfHash = $('meta[name="csrf-token-hash"]').attr('content');
+            
+            var postData = {
+                '_method': 'DELETE'
+            };
+            postData[csrfTokenName] = csrfHash;
+            
+            $.ajax({
+                url: baseUrl + 'products/delete/' + id,
+                type: 'POST',
+                data: postData,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        showToast('success', response.message || 'Product deactivated successfully!');
+                        dataTable.ajax.reload(null, false);
+                    } else {
+                        showToast('error', response.message || 'Failed to deactivate product.');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('AJAX Error:', xhr.responseText);
+                    let errorMsg = 'Server error occurred. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    showToast('error', errorMsg);
+                }
+            });
+        }
+    });
+
+    // ============================================
+    // REACTIVATE PRODUCT - INSERTED HERE
+    // ============================================
+    $(document).on('click', '.reactivate-product', function() {
+        var id = $(this).data('id');
+        var productName = $(this).data('name');
         
-        $.ajax({
-            url: baseUrl + 'products/delete/' + id,
-            type: 'POST',
-            data: postData,
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    showToast('success', response.message || 'Product deleted successfully!');
-                    dataTable.ajax.reload(null, false);
-                } else {
-                    showToast('error', response.message || 'Failed to delete product.');
+        if (confirm('Reactivate product "' + productName + '"? This product will become available for sale again.')) {
+            var csrfTokenName = $('meta[name="csrf-token-name"]').attr('content');
+            var csrfHash = $('meta[name="csrf-token-hash"]').attr('content');
+            
+            var postData = {};
+            postData[csrfTokenName] = csrfHash;
+            
+            $.ajax({
+                url: baseUrl + 'products/reactivate/' + id,
+                type: 'POST',
+                data: postData,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        showToast('success', response.message || 'Product reactivated successfully!');
+                        dataTable.ajax.reload(null, false);
+                    } else {
+                        showToast('error', response.message || 'Failed to reactivate product.');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('AJAX Error:', xhr.responseText);
+                    let errorMsg = 'Server error occurred. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    showToast('error', errorMsg);
                 }
-            },
-            error: function(xhr) {
-                console.error('AJAX Error:', xhr.responseText);
-                let errorMsg = 'Server error occurred. Please try again.';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMsg = xhr.responseJSON.message;
-                }
-                showToast('error', errorMsg);
-            }
-        });
-    }
- });
+            });
+        }
+    });
 
     // Clear form errors when modals are closed
     $('#AddNewModal').on('hidden.bs.modal', function() {

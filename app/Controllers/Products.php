@@ -233,35 +233,74 @@ class Products extends BaseController
     // --------------------------------------------------------------------
     // Delete product
     // --------------------------------------------------------------------
-    public function delete($id)
-    {
-        // Check if product exists
-        $product = $this->productModel->find($id);
-        if (!$product) {
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'status' => 'error', 
-                    'message' => 'Product not found'
-                ]);
-            }
-            return redirect()->to('/products')->with('error', 'Product not found');
-        }
-        
-        // Delete stock adjustments first (if any)
-        $this->stockAdjustmentModel->where('product_id', $id)->delete();
-        
-        // Delete the product
-        $this->productModel->delete($id);
-        
+  public function delete($id)
+{
+    $product = $this->productModel->find($id);
+    if (!$product) {
         if ($this->request->isAJAX()) {
             return $this->response->setJSON([
-                'status' => 'success', 
-                'message' => 'Product deleted successfully'
+                'status' => 'error', 
+                'message' => 'Product not found'
             ]);
         }
-        
-        return redirect()->to('/products')->with('message', 'Product deleted successfully');
+        return redirect()->to('/products')->with('error', 'Product not found');
     }
+    
+    // Instead of deleting, just deactivate (soft delete)
+    $result = $this->productModel->update($id, [
+        'is_active' => 0,
+        'stock_qty' => 0
+    ]);
+    
+    if ($this->request->isAJAX()) {
+        if ($result) {
+            return $this->response->setJSON([
+                'status' => 'success', 
+                'message' => 'Product deactivated successfully'
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'status' => 'error', 
+                'message' => 'Failed to deactivate product'
+            ]);
+        }
+    }
+    
+    return redirect()->to('/products')->with('message', 'Product deactivated successfully');
+}
+    
+    // Reactivate product (set back to active)
+public function reactivate($id)
+{
+    $product = $this->productModel->find($id);
+    if (!$product) {
+        if ($this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Product not found'
+            ]);
+        }
+        return redirect()->to('/products')->with('error', 'Product not found');
+    }
+    
+    $result = $this->productModel->update($id, ['is_active' => 1]);
+    
+    if ($this->request->isAJAX()) {
+        if ($result) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Product reactivated successfully'
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Failed to reactivate product'
+            ]);
+        }
+    }
+    
+    return redirect()->to('/products')->with('message', 'Product reactivated successfully');
+}
 
     // --------------------------------------------------------------------
     // Restock product (increment/decrement stock and log adjustment)
