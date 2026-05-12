@@ -1,742 +1,750 @@
 <?= $this->extend('theme/template') ?>
+<meta name="csrf-token" content="<?= csrf_hash() ?>">
 
 <?= $this->section('content') ?>
+
 <div class="content-wrapper">
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0">Sales Orders</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="<?= base_url('dashboard') ?>">Home</a></li>
-                        <li class="breadcrumb-item active">Sales Orders</li>
-                    </ol>
-                </div>
-            </div>
+  <div class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1 class="m-0">Sales & Inventory Point of Sale</h1>
         </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item"><a href="<?= base_url('dashboard') ?>">Home</a></li>
+            <li class="breadcrumb-item active">Sales</li>
+          </ol>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <section class="content">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">List of Sales Orders</h3>
-                            <div class="float-right">
-                                <button type="button" class="btn btn-md btn-success" id="addNewSaleBtn">
-                                    <i class="fa fa-plus-circle"></i> New Sale
-                                </button>
-                                <button type="button" class="btn btn-md btn-info ml-2" id="filterBtn">
-                                    <i class="fa fa-filter"></i> Filter
-                                </button>
-                                <button type="button" class="btn btn-md btn-secondary ml-2" id="exportBtn">
-                                    <i class="fa fa-download"></i> Export
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <!-- Filter Row -->
-                            <div class="row mb-3" id="filterRow" style="display: none;">
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label>Start Date</label>
-                                        <input type="date" id="startDate" class="form-control">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label>End Date</label>
-                                        <input type="date" id="endDate" class="form-control">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label>Payment Status</label>
-                                        <select id="paymentStatus" class="form-control">
-                                            <option value="">All</option>
-                                            <option value="paid">Paid</option>
-                                            <option value="partial">Partial</option>
-                                            <option value="unpaid">Unpaid</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label>Order Status</label>
-                                        <select id="orderStatus" class="form-control">
-                                            <option value="">All</option>
-                                            <option value="pending">Pending</option>
-                                            <option value="completed">Completed</option>
-                                            <option value="cancelled">Cancelled</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <table id="salesTable" class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Invoice No.</th>
-                                        <th>Customer</th>
-                                        <th>Sale Date</th>
-                                        <th class="text-right">Total Amount</th>
-                                        <th class="text-right">Amount Paid</th>
-                                        <th class="text-right">Due Amount</th>
-                                        <th class="text-center">Payment Status</th>
-                                        <th class="text-center">Order Status</th>
-                                        <th class="text-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                                <tfoot>
-                                    <tr class="bg-light">
-                                        <td colspan="4" class="text-right"><strong>Totals:</strong></td>
-                                        <td id="totalAmount" class="text-right"><strong>₱ 0.00</strong></td>
-                                        <td id="totalPaid" class="text-right"><strong>₱ 0.00</strong></td>
-                                        <td id="totalDue" class="text-right"><strong>₱ 0.00</strong></td>
-                                        <td colspan="3"></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <!-- LEFT COLUMN: Sales Panel -->
+        <div class="col-md-8">
+          <div class="card card-primary card-outline">
+            <div class="card-header">
+              <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                  <h3 class="card-title">
+                    <i class="fas fa-shopping-cart"></i> Current Sale
+                  </h3>
+                  <span class="badge badge-success ml-2" id="orderStatusBadge">Completed</span>
                 </div>
+                <div>
+                  <span class="text-muted mr-3">
+                    <i class="far fa-calendar-alt"></i> 
+                    <span id="saleDateTimeDisplay"></span>
+                  </span>
+                  <button type="button" class="btn btn-sm btn-primary" id="addProductToSaleBtn">
+                    <i class="fas fa-plus-circle"></i> Add Product
+                  </button>
+                </div>
+              </div>
             </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-bordered table-striped table-sm mb-0" id="saleItemsTable">
+                  <thead class="thead-light">
+                    <tr>
+                      <th>Product</th>
+                      <th>Price (₱)</th>
+                      <th width="100">Quantity</th>
+                      <th>Subtotal (₱)</th>
+                      <th width="50">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="saleItemsBody">
+                    <tr id="emptyCartRow">
+                      <td colspan="5" class="text-center text-muted">No products added — click "Add Product"</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="row">
+                <div class="col-md-5">
+                  <div class="form-group mb-0">
+                    <label><i class="fas fa-sticky-note"></i> Notes</label>
+                    <input type="text" id="saleNotes" class="form-control form-control-sm" placeholder="Order notes...">
+                  </div>
+                </div>
+                <div class="col-md-7">
+                  <div class="row">
+                    <div class="col-4">
+                      <div class="form-group mb-0">
+                        <label>Discount (₱)</label>
+                        <input type="number" id="discountAmount" class="form-control form-control-sm" value="0" step="1" min="0">
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="form-group mb-0">
+                        <label>Amount Paid (₱)</label>
+                        <input type="number" id="amountPaid" class="form-control form-control-sm" value="0" step="10" min="0">
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="form-group mb-0">
+                        <label>Change (₱)</label>
+                        <input type="text" id="changeDue" class="form-control form-control-sm" readonly value="0.00">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row mt-3">
+                <div class="col-6">
+                  <button type="button" class="btn btn-danger" id="cancelSaleBtn">
+                    <i class="fas fa-trash-alt"></i> Cancel Sale
+                  </button>
+                </div>
+                <div class="col-6 text-right">
+                  <button type="button" class="btn btn-success" id="saveSaleBtn">
+                    <i class="fas fa-check-circle"></i> Complete Sale
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Recent Sales History -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fas fa-history"></i> Recent Sales</h3>
+              <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                  <i class="fas fa-minus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Date</th>
+                      <th>Items</th>
+                      <th>Total</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="salesHistoryBody">
+                    <tr><td colspan="5" class="text-center text-muted">No recent sales</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
-    </section>
-</div>
 
-<!-- Sale Modal -->
-<div class="modal fade" id="saleModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="saleModalTitle">New Sale</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+        <!-- RIGHT COLUMN: Inventory Panel -->
+        <div class="col-md-4">
+          <div class="card card-info">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fas fa-boxes"></i> Inventory Summary</h3>
+              <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                  <i class="fas fa-minus"></i>
+                </button>
+              </div>
             </div>
-            <form id="saleForm">
-                <?= csrf_field() ?>
-                <input type="hidden" name="sale_id" id="sale_id">
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Customer</label>
-                                <select name="customer_id" id="customer_id" class="form-control">
-                                    <option value="">Walk-in Customer</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Sale Date</label>
-                                <input type="datetime-local" name="sale_date" id="sale_date" class="form-control" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="card card-info">
-                                <div class="card-header">
-                                    <h6 class="card-title">Products</h6>
-                                    <button type="button" class="btn btn-sm btn-primary float-right" id="addProductBtn">
-                                        <i class="fa fa-plus"></i> Add Product
-                                    </button>
-                                </div>
-                                <div class="card-body" id="productsContainer">
-                                    <div id="productsList"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Discount (₱)</label>
-                                <input type="number" name="discount" id="discount" class="form-control" step="0.01" value="0">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Amount Paid</label>
-                                <input type="number" name="amount_paid" id="amount_paid" class="form-control" step="0.01" value="0">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Order Status</label>
-                                <select name="status" id="status" class="form-control">
-                                    <option value="pending">Pending</option>
-                                    <option value="completed">Completed</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="form-group">
-                                <label>Notes</label>
-                                <textarea name="notes" id="notes" class="form-control" rows="2"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="alert alert-info" id="totalInfo"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Sale</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- View Sale Modal -->
-<div class="modal fade" id="viewSaleModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title">Sale Details</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
-            </div>
-            <div class="modal-body">
+            <div class="card-body p-0">
+              <div class="small-box bg-light p-3 mb-0 border-bottom">
                 <div class="row">
-                    <div class="col-md-6">
-                        <table class="table table-sm">
-                            <tr><th>Invoice:</th><td id="view_invoice">-</td></tr>
-                            <tr><th>Customer:</th><td id="view_customer">-</td></tr>
-                            <tr><th>Date:</th><td id="view_date">-</td></tr>
-                            <tr><th>Status:</th><td id="view_status">-</td></tr>
-                        </table>
-                    </div>
-                    <div class="col-md-6">
-                        <table class="table table-sm">
-                            <tr><th>Total:</th><td id="view_total">-</td></tr>
-                            <tr><th>Discount:</th><td id="view_discount">-</td></tr>
-                            <tr><th>Paid:</th><td id="view_paid">-</td></tr>
-                            <tr><th>Due:</th><td id="view_due">-</td></tr>
-                        </table>
-                    </div>
+                  <div class="col-6"><strong>Categories:</strong></div>
+                  <div class="col-6" id="categoryList">-</div>
                 </div>
-                <div class="row">
-                    <div class="col-12">
-                        <strong>Items:</strong>
-                        <table class="table table-bordered mt-2">
-                            <thead>
-                                <tr><th>Product</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr>
-                            </thead>
-                            <tbody id="view_items"></tbody>
-                        </table>
-                    </div>
+                <div class="row mt-1">
+                  <div class="col-6"><strong>Suppliers:</strong></div>
+                  <div class="col-6" id="supplierList">-</div>
                 </div>
-                <div class="row">
-                    <div class="col-12">
-                        <strong>Notes:</strong>
-                        <p id="view_notes">-</p>
-                    </div>
-                </div>
+              </div>
+              <div class="p-2" style="max-height: 320px; overflow-y: auto;" id="inventoryProductList">
+                <div class="text-center text-muted p-3">Loading products...</div>
+              </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <a href="#" id="printInvoiceBtn" class="btn btn-info" target="_blank">Print Invoice</a>
+          </div>
+
+          <div class="card card-warning">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fas fa-chart-line"></i> Reports</h3>
             </div>
+            <div class="card-body">
+              <button type="button" class="btn btn-outline-warning btn-block mb-3" id="generateReportBtn">
+                <i class="fas fa-file-alt"></i> Generate Sales Report
+              </button>
+              <button type="button" class="btn btn-outline-success btn-block" id="exportSalesBtn">
+                <i class="fas fa-download"></i> Export Sales (CSV)
+              </button>
+              <div id="reportPreview" class="mt-3 p-2 bg-light rounded small" style="min-height: 100px;">
+                <span class="text-muted">Click generate to view report summary</span>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
+  </section>
 </div>
 
-<!-- Payment Modal -->
-<div class="modal fade" id="paymentModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">Process Payment</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
-            </div>
-            <form id="paymentForm">
-                <?= csrf_field() ?>
-                <div class="modal-body">
-                    <input type="hidden" id="payment_sale_id">
-                    <div class="form-group">
-                        <label>Invoice</label>
-                        <input type="text" id="payment_invoice" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Customer</label>
-                        <input type="text" id="payment_customer" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Due Amount</label>
-                        <input type="text" id="payment_due" class="form-control" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Payment Amount</label>
-                        <input type="number" name="amount" id="payment_amount" class="form-control" step="0.01" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">Process Payment</button>
-                </div>
-            </form>
+<!-- Select Product Modal -->
+<div class="modal fade" id="selectProductModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="fas fa-search"></i> Select Product to Add</h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="productSearchInput" class="form-control mb-3" placeholder="Search by name, SKU...">
+        <div style="max-height: 400px; overflow-y: auto;">
+          <table class="table table-sm table-bordered">
+            <thead class="thead-light">
+              <tr>
+                <th>Name</th>
+                <th>SKU</th>
+                <th>Price (₱)</th>
+                <th>Stock</th>
+                <th width="50"></th>
+              </tr>
+            </thead>
+            <tbody id="productSelectorBody">
+              <tr><td colspan="5" class="text-center">Loading products...</td></tr>
+            </tbody>
+          </table>
         </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
     </div>
+  </div>
 </div>
 
-<!-- Delete Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Delete Sale</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete this sale?</p>
-                <p class="text-danger">This action cannot be undone!</p>
-                <input type="hidden" id="delete_sale_id">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Toast Container -->
+<div class="toasts-top-right fixed" style="position: fixed; top: 1rem; right: 1rem; z-index: 9999;"></div>
 
-<!-- Export Modal -->
-<div class="modal fade" id="exportModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-secondary text-white">
-                <h5 class="modal-title">Export Sales</h5>
-                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
-            </div>
-            <form action="<?= base_url('sales/export') ?>" method="get" target="_blank">
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Start Date</label>
-                        <input type="date" name="start_date" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>End Date</label>
-                        <input type="date" name="end_date" class="form-control">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Export CSV</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
 <script>
 const baseUrl = "<?= base_url() ?>";
-let selectedProducts = [];
 
-$(document).ready(function() {
-    // Set default date
-    const now = new Date();
-    $('#sale_date').val(now.toISOString().slice(0, 16));
+// Global variables
+let masterProducts = [];
+let currentCart = [];
+
+// Show notification
+function showNotification(msg, type = 'info') {
+    const toastContainer = document.querySelector('.toasts-top-right');
+    if (!toastContainer) return;
     
-    // Initialize DataTable
-    const table = $('#salesTable').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: baseUrl + "/sales/getSalesData",
-            type: "POST",
-            data: function(d) {
-                d.start_date = $('#startDate').val();
-                d.end_date = $('#endDate').val();
-                d.payment_status = $('#paymentStatus').val();
-                d.order_status = $('#orderStatus').val();
-                d.<?= csrf_token() ?> = '<?= csrf_hash() ?>';
-                return d;
-            }
-        },
-        columns: [
-            { data: null, render: (data, type, row, meta) => meta.row + 1 },
-            { data: "invoice_number" },
-            { data: "customer_name" },
-            { data: "sale_date" },
-            { data: "total_amount", render: d => '₱ ' + parseFloat(d).toFixed(2), className: "text-right" },
-            { data: "amount_paid", render: d => '₱ ' + parseFloat(d).toFixed(2), className: "text-right" },
-            { data: "due_amount", render: d => '₱ ' + parseFloat(d).toFixed(2), className: "text-right" },
-            { data: "payment_status", render: getPaymentBadge, className: "text-center" },
-            { data: "status", render: getStatusBadge, className: "text-center" },
-            { data: null, render: getActions, orderable: false, className: "text-center" }
-        ],
-        order: [[3, "DESC"]],
-        drawCallback: function() { updateTotals(); }
-    });
-    
-    function getPaymentBadge(status) {
-        const badges = { 'paid': 'success', 'partial': 'warning', 'unpaid': 'danger' };
-        return `<span class="badge badge-${badges[status] || 'secondary'}">${status || 'N/A'}</span>`;
-    }
-    
-    function getStatusBadge(status) {
-        const badges = { 'completed': 'success', 'pending': 'warning', 'cancelled': 'danger' };
-        return `<span class="badge badge-${badges[status] || 'secondary'}">${status || 'N/A'}</span>`;
-    }
-    
-    function getActions(row) {
-        return `
-            <button class="btn btn-sm btn-info view-sale" data-id="${row.id}"><i class="fa fa-eye"></i></button>
-            <button class="btn btn-sm btn-warning edit-sale" data-id="${row.id}"><i class="fa fa-edit"></i></button>
-            <a href="${baseUrl}/sales/invoice/${row.id}" class="btn btn-sm btn-secondary" target="_blank"><i class="fa fa-print"></i></a>
-            ${row.payment_status !== 'paid' && row.status !== 'cancelled' ? 
-                `<button class="btn btn-sm btn-success pay-sale" data-id="${row.id}" data-invoice="${row.invoice_number}" data-customer="${row.customer_name}" data-due="${row.due_amount}"><i class="fa fa-money"></i></button>` : ''}
-            <button class="btn btn-sm btn-danger delete-sale" data-id="${row.id}"><i class="fa fa-trash"></i></button>
-        `;
-    }
-    
-    function updateTotals() {
-        let totalAmount = 0, totalPaid = 0, totalDue = 0;
-        $('#salesTable').DataTable().rows({page: 'current'}).data().each(row => {
-            totalAmount += parseFloat(row.total_amount);
-            totalPaid += parseFloat(row.amount_paid);
-            totalDue += parseFloat(row.due_amount);
-        });
-        $('#totalAmount').html(`<strong>₱ ${totalAmount.toFixed(2)}</strong>`);
-        $('#totalPaid').html(`<strong>₱ ${totalPaid.toFixed(2)}</strong>`);
-        $('#totalDue').html(`<strong>₱ ${totalDue.toFixed(2)}</strong>`);
-    }
-    
-    // Load customers
-    function loadCustomers() {
-        $.ajax({
-            url: baseUrl + "/sales/getCustomers",
-            type: "GET",
-            success: function(response) {
-                if (response.success && response.customers) {
-                    $('#customer_id').html('<option value="">Walk-in Customer</option>');
-                    response.customers.forEach(c => {
-                        $('#customer_id').append(`<option value="${c.id}">${c.name} ${c.phone ? '(' + c.phone + ')' : ''}</option>`);
-                    });
-                }
+    const toast = document.createElement('div');
+    toast.className = `toast bg-${type === 'error' ? 'danger' : (type === 'success' ? 'success' : 'info')} fade show`;
+    toast.setAttribute('role', 'alert');
+    toast.style.marginBottom = '10px';
+    toast.innerHTML = `
+        <div class="toast-header">
+            <strong class="mr-auto">RStore</strong>
+            <button type="button" class="ml-2 mb-1 close" data-dismiss="toast">&times;</button>
+        </div>
+        <div class="toast-body">${msg}</div>
+    `;
+    toastContainer.prepend(toast);
+    $(toast).toast({ delay: 3000 }).toast('show');
+    $(toast).on('hidden.bs.toast', function() { $(this).remove(); });
+}
+
+// Load products from server
+async function loadProducts() {
+    try {
+        showNotification('Loading products...', 'info');
+        const response = await fetch(baseUrl + 'sales/getProductsJson', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
             }
         });
-    }
-    
-    // New Sale
-    $('#addNewSaleBtn').click(function() {
-        resetForm();
-        loadCustomers();
-        $('#sale_id').val('');
-        $('#saleModalTitle').text('New Sale');
-        $('#saleModal').modal('show');
-    });
-    
-    // Edit Sale
-    $(document).on('click', '.edit-sale', function() {
-        const id = $(this).data('id');
-        $.ajax({
-            url: baseUrl + "/sales/getSale/" + id,
-            type: "GET",
-            success: function(response) {
-                if (response.success) {
-                    populateForm(response.data, response.items);
-                    loadCustomers();
-                    $('#saleModalTitle').text('Edit Sale');
-                    $('#saleModal').modal('show');
-                } else {
-                    Swal.fire('Error', response.message, 'error');
-                }
-            }
-        });
-    });
-    
-    // View Sale
-    $(document).on('click', '.view-sale', function() {
-        const id = $(this).data('id');
-        $.ajax({
-            url: baseUrl + "/sales/getSale/" + id,
-            type: "GET",
-            success: function(response) {
-                if (response.success) {
-                    displaySale(response.data, response.items);
-                    $('#viewSaleModal').modal('show');
-                }
-            }
-        });
-    });
-    
-    // Pay Sale
-    $(document).on('click', '.pay-sale', function() {
-        $('#payment_sale_id').val($(this).data('id'));
-        $('#payment_invoice').val($(this).data('invoice'));
-        $('#payment_customer').val($(this).data('customer'));
-        $('#payment_due').val('₱ ' + parseFloat($(this).data('due')).toFixed(2));
-        $('#payment_amount').val('');
-        $('#paymentModal').modal('show');
-    });
-    
-    // Delete Sale
-    $(document).on('click', '.delete-sale', function() {
-        $('#delete_sale_id').val($(this).data('id'));
-        $('#deleteModal').modal('show');
-    });
-    
-    $('#confirmDeleteBtn').click(function() {
-        const id = $('#delete_sale_id').val();
-        $.ajax({
-            url: baseUrl + "/sales/delete/" + id,
-            type: 'DELETE',
-            data: { '<?= csrf_token() ?>': '<?= csrf_hash() ?>' },
-            success: function(response) {
-                if (response.success) {
-                    $('#deleteModal').modal('hide');
-                    $('#salesTable').DataTable().ajax.reload();
-                    Swal.fire('Deleted!', response.message, 'success');
-                } else {
-                    Swal.fire('Error', response.message, 'error');
-                }
-            }
-        });
-    });
-    
-    $('#paymentForm').submit(function(e) {
-        e.preventDefault();
-        const saleId = $('#payment_sale_id').val();
-        const amount = $('#payment_amount').val();
+        const result = await response.json();
         
-        $.ajax({
-            url: baseUrl + "/sales/processPayment/" + saleId,
-            type: "POST",
-            data: { amount: amount, '<?= csrf_token() ?>': '<?= csrf_hash() ?>' },
-            success: function(response) {
-                if (response.success) {
-                    $('#paymentModal').modal('hide');
-                    $('#salesTable').DataTable().ajax.reload();
-                    Swal.fire('Success', response.message, 'success');
-                } else {
-                    Swal.fire('Error', response.message, 'error');
-                }
+        if (result.status === 'success' && result.data) {
+            masterProducts = result.data;
+            renderInventoryPanel();
+            loadProductSelector();
+            showNotification(`Loaded ${masterProducts.length} products`, 'success');
+        } else {
+            // Fallback demo data
+            masterProducts = [
+                { id: 1, name: "Coca-Cola", sku: "COKE001", price: 55, stock: 45, category: "Drinks", supplier: "Coca-Cola" },
+                { id: 2, name: "Laptop Pro", sku: "LAP001", price: 45000, stock: 12, category: "Electronics", supplier: "TechDistro" },
+                { id: 3, name: "Wireless Mouse", sku: "MOU123", price: 650, stock: 45, category: "Electronics", supplier: "TechDistro" },
+                { id: 4, name: "Organic Coffee", sku: "COF456", price: 320, stock: 28, category: "Grocery", supplier: "FreshMart" }
+            ];
+            renderInventoryPanel();
+            loadProductSelector();
+            showNotification('Using demo products (database connection issue)', 'warning');
+        }
+    } catch (error) {
+        console.error('Error loading products:', error);
+        // Fallback demo data
+        masterProducts = [
+            { id: 1, name: "Coca-Cola", sku: "COKE001", price: 55, stock: 45, category: "Drinks", supplier: "Coca-Cola" },
+            { id: 2, name: "Laptop Pro", sku: "LAP001", price: 45000, stock: 12, category: "Electronics", supplier: "TechDistro" },
+            { id: 3, name: "Wireless Mouse", sku: "MOU123", price: 650, stock: 45, category: "Electronics", supplier: "TechDistro" },
+            { id: 4, name: "Organic Coffee", sku: "COF456", price: 320, stock: 28, category: "Grocery", supplier: "FreshMart" }
+        ];
+        renderInventoryPanel();
+        loadProductSelector();
+        showNotification('Using demo products', 'warning');
+    }
+}
+
+// Render inventory panel
+function renderInventoryPanel() {
+    const container = document.getElementById("inventoryProductList");
+    if (!container) return;
+    
+    if (!masterProducts.length) {
+        container.innerHTML = '<div class="text-center text-muted p-3">No products found</div>';
+        return;
+    }
+    
+    // Update categories and suppliers
+    const categories = [...new Set(masterProducts.map(p => p.category).filter(c => c))];
+    const suppliers = [...new Set(masterProducts.map(p => p.supplier).filter(s => s))];
+    document.getElementById("categoryList").innerHTML = categories.length ? categories.join(', ') : '-';
+    document.getElementById("supplierList").innerHTML = suppliers.length ? suppliers.join(', ') : '-';
+    
+    let html = '<div class="list-group list-group-flush">';
+    masterProducts.forEach(prod => {
+        const stockBadge = prod.stock <= 5 ? 'badge-danger' : (prod.stock <= 10 ? 'badge-warning' : 'badge-success');
+        html += `<div class="list-group-item p-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${escapeHtml(prod.name)}</strong><br>
+                            <small class="text-muted">₱${parseFloat(prod.price).toFixed(2)} | Stock: <span class="badge ${stockBadge}">${prod.stock}</span></small>
+                        </div>
+                        <button class="btn btn-xs btn-primary add-from-inventory" data-id="${prod.id}" ${prod.stock <= 0 ? 'disabled' : ''}>
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                 </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+    
+    // Attach add buttons
+    document.querySelectorAll(".add-from-inventory").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            const prodId = parseInt(btn.getAttribute("data-id"));
+            const product = masterProducts.find(p => p.id == prodId);
+            if (product) addProductToCart(product);
+        });
+    });
+}
+
+// Load product selector modal
+function loadProductSelector() {
+    const tbody = document.getElementById("productSelectorBody");
+    if (!tbody) return;
+    
+    if (!masterProducts.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No products available</td></tr>';
+        return;
+    }
+    
+    let html = '';
+    masterProducts.forEach(prod => {
+        html += `<tr>
+                    <td>${escapeHtml(prod.name)}</td>
+                    <td><small>${escapeHtml(prod.sku)}</small></td>
+                    <td>₱${parseFloat(prod.price).toFixed(2)}</td>
+                    <td><span class="badge ${prod.stock <= 0 ? 'badge-danger' : 'badge-secondary'}">${prod.stock}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-success select-product-btn" data-id="${prod.id}" ${prod.stock <= 0 ? 'disabled' : ''}>
+                            <i class="fas fa-cart-plus"></i>
+                        </button>
+                    </td>
+                 </tr>`;
+    });
+    tbody.innerHTML = html;
+    
+    // Attach select buttons
+    document.querySelectorAll(".select-product-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            const prodId = parseInt(btn.getAttribute("data-id"));
+            const product = masterProducts.find(p => p.id == prodId);
+            if (product && product.stock > 0) {
+                addProductToCart(product);
+                $('#selectProductModal').modal('hide');
+                showNotification(`Added ${product.name} to cart`, 'success');
             }
         });
     });
+}
+
+// Add product to cart
+function addProductToCart(product) {
+    if (product.stock <= 0) {
+        showNotification(`❌ ${product.name} is out of stock!`, 'error');
+        return false;
+    }
     
-    $('#saleForm').submit(function(e) {
-        e.preventDefault();
+    const existingItem = currentCart.find(item => item.productId == product.id);
+    if (existingItem) {
+        if (existingItem.quantity + 1 > product.stock) {
+            showNotification(`⚠️ Cannot add more than ${product.stock} units`, 'error');
+            return false;
+        }
+        existingItem.quantity += 1;
+    } else {
+        currentCart.push({
+            productId: product.id,
+            name: product.name,
+            sku: product.sku,
+            price: parseFloat(product.price),
+            quantity: 1
+        });
+    }
+    renderCartTable();
+    return true;
+}
+
+// Render cart table
+function renderCartTable() {
+    const tbody = document.getElementById("saleItemsBody");
+    if (!tbody) return;
+    
+    if (currentCart.length === 0) {
+        tbody.innerHTML = '<tr id="emptyCartRow"><td colspan="5" class="text-center text-muted">No products added — click "Add Product"</td></tr>';
+        recalcTotals();
+        return;
+    }
+    
+    let html = "";
+    currentCart.forEach((item, idx) => {
+        const subtotal = item.price * item.quantity;
+        html += `<tr>
+                    <td>${escapeHtml(item.name)}<br><small class="text-muted">${escapeHtml(item.sku)}</small></td>
+                    <td>₱${item.price.toFixed(2)}</td>
+                    <td>
+                        <input type="number" min="1" max="999" value="${item.quantity}" data-index="${idx}" class="cart-qty-input form-control form-control-sm" style="width:80px">
+                    </td>
+                    <td>₱${subtotal.toFixed(2)}</td>
+                    <td><button class="btn btn-sm btn-danger remove-cart-item" data-index="${idx}"><i class="fas fa-trash"></i></button></td>
+                 </tr>`;
+    });
+    tbody.innerHTML = html;
+    
+    // Quantity change events
+    document.querySelectorAll(".cart-qty-input").forEach(input => {
+        input.addEventListener("change", (e) => {
+            const idx = parseInt(e.target.dataset.index);
+            let newQty = parseInt(e.target.value);
+            if (isNaN(newQty) || newQty < 1) newQty = 1;
+            const product = masterProducts.find(p => p.id == currentCart[idx].productId);
+            if (product && newQty > product.stock) {
+                showNotification(`⚠️ Only ${product.stock} available`, 'error');
+                newQty = product.stock;
+                e.target.value = newQty;
+            }
+            currentCart[idx].quantity = newQty;
+            renderCartTable();
+            recalcTotals();
+        });
+    });
+    
+    // Remove events
+    document.querySelectorAll(".remove-cart-item").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            const idx = parseInt(btn.dataset.index);
+            currentCart.splice(idx, 1);
+            renderCartTable();
+            recalcTotals();
+        });
+    });
+    
+    recalcTotals();
+}
+
+// Recalculate totals
+function recalcTotals() {
+    let subtotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    let discount = parseFloat(document.getElementById("discountAmount")?.value) || 0;
+    let totalAfterDiscount = Math.max(0, subtotal - discount);
+    let amountPaid = parseFloat(document.getElementById("amountPaid")?.value) || 0;
+    let changeDue = Math.max(0, amountPaid - totalAfterDiscount);
+    
+    const changeInput = document.getElementById("changeDue");
+    if (changeInput) changeInput.value = changeDue.toFixed(2);
+}
+
+// Save sale
+async function saveCurrentSale() {
+    if (currentCart.length === 0) {
+        showNotification("❌ Cannot save empty sale", 'error');
+        return;
+    }
+    
+    const subtotal = currentCart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+    const discount = parseFloat(document.getElementById("discountAmount")?.value) || 0;
+    const total = Math.max(0, subtotal - discount);
+    const amountPaid = parseFloat(document.getElementById("amountPaid")?.value) || 0;
+    
+    if (amountPaid < total) {
+        showNotification(`⚠️ Insufficient payment`, 'error');
+        return;
+    }
+    
+    const saleData = {
+        items: currentCart.map(item => ({
+            product_id: item.productId,
+            quantity: item.quantity,
+            price: item.price
+        })),
+        subtotal: subtotal,
+        discount: discount,
+        total: total,
+        amount_paid: amountPaid,
+        change: amountPaid - total,
+        notes: document.getElementById("saleNotes")?.value || "",
+        payment_method: "cash"
+    };
+    
+    try {
+        const response = await fetch(baseUrl + 'sales/saveSale', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(saleData)
+        });
         
-        if (selectedProducts.length === 0) {
-            Swal.fire('Error', 'Please add at least one product', 'error');
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            // Update stock locally
+            for (let item of currentCart) {
+                const product = masterProducts.find(p => p.id == item.productId);
+                if (product) product.stock -= item.quantity;
+            }
+            
+            currentCart = [];
+            if (document.getElementById("discountAmount")) document.getElementById("discountAmount").value = "0";
+            if (document.getElementById("amountPaid")) document.getElementById("amountPaid").value = "0";
+            if (document.getElementById("saleNotes")) document.getElementById("saleNotes").value = "";
+            
+            renderCartTable();
+            renderInventoryPanel();
+            
+            showNotification(`✅ Sale ${result.order_number} completed!`, 'success');
+            
+            // Reload sales history
+            loadSalesHistory();
+        } else {
+            showNotification(`❌ Error: ${result.message}`, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification(`❌ Network error`, 'error');
+    }
+}
+
+// Cancel sale
+function cancelSale() {
+    if (currentCart.length > 0 && confirm("Cancel current sale?")) {
+        currentCart = [];
+        document.getElementById("discountAmount").value = "0";
+        document.getElementById("amountPaid").value = "0";
+        document.getElementById("saleNotes").value = "";
+        renderCartTable();
+        showNotification("Sale cancelled", 'info');
+    }
+}
+
+// Load sales history
+async function loadSalesHistory() {
+    try {
+        const response = await fetch(baseUrl + 'sales/getSalesHistoryJson', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const result = await response.json();
+        
+        const tbody = document.getElementById("salesHistoryBody");
+        if (!tbody) return;
+        
+        const sales = result.data || [];
+        
+        if (sales.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No recent sales</td></tr>';
             return;
         }
         
-        const saleId = $('#sale_id').val();
-        const url = saleId ? baseUrl + "/sales/update/" + saleId : baseUrl + "/sales/store";
-        
-        const formData = {
-            customer_id: $('#customer_id').val(),
-            sale_date: $('#sale_date').val(),
-            discount: $('#discount').val(),
-            amount_paid: $('#amount_paid').val(),
-            status: $('#status').val(),
-            notes: $('#notes').val(),
-            items: selectedProducts,
-            total_amount: calculateTotal(),
-            '<?= csrf_token() ?>': '<?= csrf_hash() ?>'
-        };
-        
-        $.ajax({
-            url: url,
-            type: "POST",
-            data: formData,
-            success: function(response) {
-                if (response.success) {
-                    $('#saleModal').modal('hide');
-                    $('#salesTable').DataTable().ajax.reload();
-                    Swal.fire('Success', response.message, 'success');
-                    resetForm();
-                } else {
-                    Swal.fire('Error', response.message, 'error');
-                }
-            },
-            error: function(xhr) {
-                Swal.fire('Error', 'Failed to save sale. Check console.', 'error');
-                console.log(xhr.responseText);
-            }
-        });
-    });
-    
-    // Add Product
-    $('#addProductBtn').click(function() {
-        $.ajax({
-            url: baseUrl + "/sales/searchProducts/all",
-            type: "GET",
-            success: function(response) {
-                if (response.success && response.products.length > 0) {
-                    let options = '<option value="">Select Product</option>';
-                    response.products.forEach(p => {
-                        options += `<option value="${p.id}" data-price="${p.price}" data-stock="${p.stock_qty}">${p.name} - ₱${parseFloat(p.price).toFixed(2)} (Stock: ${p.stock_qty})</option>`;
-                    });
-                    
-                    Swal.fire({
-                        title: 'Add Product',
-                        html: `
-                            <select id="product_select" class="form-control mb-2">${options}</select>
-                            <input type="number" id="product_qty" class="form-control" placeholder="Quantity" min="1" value="1">
-                            <input type="number" id="product_price" class="form-control mt-2" placeholder="Price" step="0.01">
-                        `,
-                        showCancelButton: true,
-                        confirmButtonText: 'Add',
-                        didOpen: () => {
-                            $('#product_select').on('change', function() {
-                                $('#product_price').val($(this).find(':selected').data('price'));
-                            });
-                            $('#product_select').trigger('change');
-                        },
-                        preConfirm: () => {
-                            const productId = $('#product_select').val();
-                            const quantity = parseInt($('#product_qty').val());
-                            const price = parseFloat($('#product_price').val());
-                            const stock = parseInt($('#product_select option:selected').data('stock'));
-                            const name = $('#product_select option:selected').text().split(' - ')[0];
-                            
-                            if (!productId) return Swal.showValidationMessage('Select a product');
-                            if (!quantity || quantity < 1) return Swal.showValidationMessage('Enter valid quantity');
-                            if (quantity > stock) return Swal.showValidationMessage(`Only ${stock} in stock`);
-                            if (!price || price <= 0) return Swal.showValidationMessage('Enter valid price');
-                            
-                            return { productId, name, quantity, price };
-                        }
-                    }).then(result => {
-                        if (result.isConfirmed) {
-                            const existing = selectedProducts.findIndex(p => p.product_id == result.value.productId);
-                            if (existing !== -1) {
-                                selectedProducts[existing].quantity += result.value.quantity;
-                            } else {
-                                selectedProducts.push(result.value);
-                            }
-                            renderProducts();
-                            updateTotalInfo();
-                        }
-                    });
-                } else {
-                    Swal.fire('Info', 'No products available', 'info');
-                }
-            }
-        });
-    });
-    
-    function renderProducts() {
-        let html = '<div class="table-responsive"><table class="table table-sm table-bordered"><thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Subtotal</th><th></th></tr></thead><tbody>';
-        selectedProducts.forEach((p, i) => {
-            html += `<tr>
-                <td>${p.name}</td>
-                <td><input type="number" class="form-control form-control-sm qty-input" data-index="${i}" value="${p.quantity}" min="1" style="width:80px"></td>
-                <td><input type="number" class="form-control form-control-sm price-input" data-index="${i}" value="${p.price}" step="0.01" style="width:100px"></td>
-                <td class="text-right">₱ ${(p.quantity * p.price).toFixed(2)}</td>
-                <td><button class="btn btn-sm btn-danger remove-product" data-index="${i}"><i class="fa fa-trash"></i></button></td>
-            </tr>`;
-        });
-        html += '</tbody></table></div>';
-        $('#productsList').html(html || '<div class="alert alert-info">No products added</div>');
-        
-        $('.qty-input').off('change').on('change', function() {
-            const idx = $(this).data('index');
-            selectedProducts[idx].quantity = parseInt($(this).val()) || 1;
-            renderProducts();
-            updateTotalInfo();
-        });
-        
-        $('.price-input').off('change').on('change', function() {
-            const idx = $(this).data('index');
-            selectedProducts[idx].price = parseFloat($(this).val()) || 0;
-            renderProducts();
-            updateTotalInfo();
-        });
-        
-        $('.remove-product').off('click').on('click', function() {
-            selectedProducts.splice($(this).data('index'), 1);
-            renderProducts();
-            updateTotalInfo();
-        });
-    }
-    
-    function calculateTotal() {
-        const subtotal = selectedProducts.reduce((sum, p) => sum + (p.quantity * p.price), 0);
-        return subtotal - (parseFloat($('#discount').val()) || 0);
-    }
-    
-    function updateTotalInfo() {
-        const subtotal = selectedProducts.reduce((sum, p) => sum + (p.quantity * p.price), 0);
-        const discount = parseFloat($('#discount').val()) || 0;
-        const total = subtotal - discount;
-        const paid = parseFloat($('#amount_paid').val()) || 0;
-        $('#totalInfo').html(`Subtotal: ₱${subtotal.toFixed(2)} | Discount: ₱${discount.toFixed(2)} | Total: ₱${total.toFixed(2)} | Paid: ₱${paid.toFixed(2)} | Due: ₱${(total - paid).toFixed(2)}`);
-    }
-    
-    function resetForm() {
-        $('#sale_id').val('');
-        $('#customer_id').val('');
-        $('#discount').val(0);
-        $('#amount_paid').val(0);
-        $('#status').val('pending');
-        $('#notes').val('');
-        selectedProducts = [];
-        renderProducts();
-        updateTotalInfo();
-    }
-    
-    function populateForm(sale, items) {
-        $('#sale_id').val(sale.id);
-        $('#customer_id').val(sale.customer_id || '');
-        let saleDate = sale.sale_date.replace(' ', 'T').substring(0, 16);
-        $('#sale_date').val(saleDate);
-        $('#discount').val(sale.discount || 0);
-        $('#amount_paid').val(sale.amount_paid || 0);
-        $('#status').val(sale.status || 'pending');
-        $('#notes').val(sale.notes || '');
-        selectedProducts = items.map(i => ({
-            product_id: i.product_id,
-            name: i.product_name,
-            quantity: parseInt(i.quantity),
-            price: parseFloat(i.unit_price)
-        }));
-        renderProducts();
-        updateTotalInfo();
-    }
-    
-    function displaySale(sale, items) {
-        $('#view_invoice').text(sale.invoice_number);
-        $('#view_customer').text(sale.customer_name || 'Walk-in');
-        $('#view_date').text(sale.sale_date);
-        $('#view_status').html(getStatusBadge(sale.status));
-        $('#view_total').text('₱ ' + parseFloat(sale.total_amount).toFixed(2));
-        $('#view_discount').text('₱ ' + parseFloat(sale.discount || 0).toFixed(2));
-        $('#view_paid').text('₱ ' + parseFloat(sale.amount_paid).toFixed(2));
-        $('#view_due').text('₱ ' + parseFloat(sale.due_amount || 0).toFixed(2));
-        $('#view_notes').text(sale.notes || '-');
-        
         let html = '';
-        items.forEach(i => {
-            html += `<tr><td>${i.product_name}</td><td class="text-center">${i.quantity}</td><td class="text-right">₱ ${parseFloat(i.unit_price).toFixed(2)}</td><td class="text-right">₱ ${parseFloat(i.subtotal).toFixed(2)}</td></tr>`;
+        sales.slice(0, 10).forEach(sale => {
+            html += `<tr>
+                        <td><small>${escapeHtml(sale.order_number)}</small></td>
+                        <td><small>${sale.created_at || '-'}</small></td>
+                        <td><small>${sale.item_count || 0}</small></td>
+                        <td><small>₱${parseFloat(sale.total || 0).toFixed(2)}</small></td>
+                        <td><span class="badge badge-success">Completed</span></td>
+                     </tr>`;
         });
-        $('#view_items').html(html);
-        $('#printInvoiceBtn').attr('href', `${baseUrl}/sales/invoice/${sale.id}`);
+        tbody.innerHTML = html;
+    } catch (error) {
+        console.error('Error loading sales:', error);
+    }
+}
+
+// Add this function to get CSRF token
+function getCsrfToken() {
+    let token = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (!token) {
+        token = document.querySelector('input[name="csrf_test_name"]')?.value;
+    }
+    return token;
+}
+
+// Update your saveSale function
+async function completeSale() {
+    if (cart.length === 0) {
+        showNotification('Cart is empty!', 'error');
+        return;
     }
     
-    // Filters
-    $('#filterBtn').click(() => $('#filterRow').slideToggle());
-    $('#startDate, #endDate, #paymentStatus, #orderStatus').on('change', () => $('#salesTable').DataTable().ajax.reload());
-    $('#exportBtn').click(() => $('#exportModal').modal('show'));
-    $('#discount, #amount_paid').on('input', updateTotalInfo);
+    let subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    let discount = parseFloat(document.getElementById('discount')?.value) || 0;
+    let total = subtotal - discount;
+    let amountPaid = parseFloat(document.getElementById('amountPaid')?.value) || 0;
+    
+    if (amountPaid < total) {
+        showNotification(`Insufficient payment! Need ₱${total.toFixed(2)}`, 'error');
+        return;
+    }
+    
+    const saleData = {
+        items: cart.map(item => ({
+            product_id: item.id,
+            quantity: item.quantity,
+            price: item.price
+        })),
+        subtotal: subtotal,
+        discount: discount,
+        total: total,
+        amount_paid: amountPaid,
+        change: amountPaid - total,
+        notes: document.getElementById('notes')?.value || '',
+        payment_method: 'cash',
+        csrf_test_name: getCsrfToken()  // Add CSRF token here
+    };
+    
+    try {
+        const response = await fetch(baseUrl + 'sales/saveSale', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': getCsrfToken()  // Also as header
+            },
+            body: JSON.stringify(saleData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            // Update local stock
+            cart.forEach(item => {
+                const product = products.find(p => p.id === item.id);
+                if (product) product.stock -= item.quantity;
+            });
+            
+            // Clear cart
+            cart = [];
+            document.getElementById('discount').value = '0';
+            document.getElementById('amountPaid').value = '0';
+            document.getElementById('notes').value = '';
+            
+            renderCart();
+            displayProductList();
+            loadSalesHistory();
+            
+            showNotification(`✅ Sale ${result.order_number} completed!`, 'success');
+        } else {
+            showNotification(`❌ Error: ${result.message}`, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Network error!', 'error');
+    }
+}
+
+// Generate report
+function generateReport() {
+    const reportDiv = document.getElementById("reportPreview");
+    if (reportDiv) {
+        const totalSales = currentCart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+        reportDiv.innerHTML = `<strong>📋 Current Session</strong><br>
+                               Items in cart: ${currentCart.length}<br>
+                               Subtotal: ₱${currentCart.reduce((sum, i) => sum + (i.price * i.quantity), 0).toFixed(2)}<br>
+                               Time: ${new Date().toLocaleTimeString()}`;
+        showNotification("Report generated", 'success');
+    }
+}
+
+// Export sales
+function exportSalesData() {
+    window.location.href = baseUrl + 'sales/export/csv';
+    showNotification("Export started", 'success');
+}
+
+// Helper function
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+// Update date/time
+function updateDateTime() {
+    const now = new Date();
+    const elem = document.getElementById("saleDateTimeDisplay");
+    if (elem) {
+        elem.innerText = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+    }
+}
+
+// Initialize on page load
+$(document).ready(function() {
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+    
+    loadProducts();
+    loadSalesHistory();
+    
+    $("#addProductToSaleBtn").click(function() {
+        loadProductSelector();
+        $('#selectProductModal').modal('show');
+    });
+    
+    $("#saveSaleBtn").click(saveCurrentSale);
+    $("#cancelSaleBtn").click(cancelSale);
+    $("#generateReportBtn").click(generateReport);
+    $("#exportSalesBtn").click(exportSalesData);
+    
+    $("#discountAmount, #amountPaid").on('input', function() {
+        recalcTotals();
+    });
 });
 </script>
 <?= $this->endSection() ?>

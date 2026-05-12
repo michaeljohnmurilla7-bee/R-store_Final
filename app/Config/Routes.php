@@ -103,6 +103,7 @@ $routes->group('suppliers', function($routes) {
     // Export
     $routes->get('export', 'Suppliers::export');  // Use ::
 });
+
 // Categories Routes
 $routes->group('categories', function($routes) {
     // Main pages
@@ -184,34 +185,42 @@ $routes->group('customers', function($routes) {
     $routes->get('json', 'Customers::jsonList');
 });
 
+// // Sales Routes
+// $routes->group('sales', ['namespace' => 'App\Controllers'], function($routes) {
+//     $routes->get('/', 'Sales::index');
+//     $routes->get('getProductsJson', 'Sales::getProductsJson');
+//     $routes->get('getSalesHistoryJson', 'Sales::getSalesHistoryJson');
+//     $routes->post('saveSale', 'Sales::saveSale');
+//     $routes->get('getReceipt/(:num)', 'Sales::getReceipt/$1');
+//     $routes->get('salesSummary', 'Sales::salesSummary');
+    
+// });
 
+
+// ===========================================================================
+// Sales Routes
 $routes->group('sales', function($routes) {
     // Main pages
     $routes->get('/', 'Sales::index');
-    $routes->post('getSalesData', 'Sales::getSalesData');
+    $routes->get('index', 'Sales::index');
     
-    // DataTable AJAX endpoints - IMPORTANT: No 'sales/' prefix inside group!
-    $routes->post('getSalesData', 'Sales::getSalesData');
+    // AJAX endpoints
+    $routes->get('getProductsJson', 'Sales::getProductsJson');
+    $routes->get('getSalesHistoryJson', 'Sales::getSalesHistoryJson');
     $routes->get('getSale/(:num)', 'Sales::getSale/$1');
-    $routes->get('getCustomers', 'Sales::getCustomers');
-    $routes->get('getCount', 'Sales::getCount');
-    $routes->get('getSalesSummary', 'Sales::getSalesSummary');
-    $routes->get('getRecentSales', 'Sales::getRecentSales');
+    $routes->get('getReceipt/(:num)', 'Sales::getReceipt/$1');
     
-    // CRUD Operations
-    $routes->post('store', 'Sales::store');
-    $routes->post('update/(:num)', 'Sales::update/$1');
-    $routes->delete('delete/(:num)', 'Sales::delete/$1');
-    $routes->post('delete/(:num)', 'Sales::delete/$1'); // Fallback
+    // Create/Store
+    $routes->post('saveSale', 'Sales::saveSale');
     
-    // Payment handling
-    $routes->post('processPayment/(:num)', 'Sales::processPayment/$1');
-    $routes->post('cancelSale/(:num)', 'Sales::cancelSale/$1'); // ADD THIS
+    // Reports
+    $routes->get('dailyReport', 'Sales::dailyReport');
+    $routes->get('monthlyReport', 'Sales::monthlyReport');
+    $routes->get('salesSummary', 'Sales::salesSummary');
     
-    // Export functionality
-    $routes->get('export', 'Sales::export');
+    // Export
+    $routes->get('export/(:any)', 'Sales::export/$1');
     
-    // Product search
-    $routes->get('searchProducts/(:any)', 'Sales::searchProducts/$1');
-    $routes->get('searchProducts', 'Sales::searchProducts');
+    // Print receipt
+    $routes->get('print/(:num)', 'Sales::printReceipt/$1');
 });

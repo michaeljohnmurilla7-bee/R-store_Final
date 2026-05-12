@@ -72,9 +72,18 @@ class Filters extends BaseFilters
      */
     public array $globals = [
         'before' => [
-            'inactivity' => ['except' => ['login', 'login/*', 'auth/*']], // adjust paths as needed
+            'inactivity' => ['except' => ['login', 'login/*', 'auth/*']],
             'honeypot',
-            'csrf',
+            'csrf' => ['except' => [
+                'sales',              // Sales main page
+                'sales/*',            // All sales routes
+                'sales/saveSale',     // Save sale endpoint
+                'sales/getProductsJson',
+                'sales/getSalesHistoryJson',
+                'sales/salesSummary',
+                'sales/export/*',
+                'sales/print/*'
+            ]],
             'invalidchars',
         ],
         'after' => [
