@@ -130,15 +130,16 @@
                 <table class="table table-sm table-hover mb-0">
                   <thead>
                     <tr>
-                      <th>Order ID</th>
-                      <th>Date</th>
-                      <th>Items</th>
-                      <th>Total</th>
-                      <th>Status</th>
+                     <th>Order ID</th>
+                     <th>Product</th>
+                     <th>Date</th>
+                     <th>Items</th>
+                     <th>Total</th>
+                     <th>Status</th>
                     </tr>
                   </thead>
                   <tbody id="salesHistoryBody">
-                    <tr><td colspan="5" class="text-center text-muted">Loading recent sales...</td></tr>
+                  <tr><td colspan="6" class="text-center text-muted">Loading recent sales...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -809,37 +810,61 @@ function cancelSale() {
 }
 
 async function loadSalesHistory() {
+    console.log('🔵 loadSalesHistory() CALLED');
     try {
-        const response = await fetch(baseUrl + 'sales/getSalesHistoryJson', {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        // Add timestamp to prevent caching
+        const timestamp = new Date().getTime();
+        const response = await fetch(baseUrl + 'sales/getSalesHistoryJson?t=' + timestamp, {
+            headers: { 
+                'X-Requested-With': 'XMLHttpRequest',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+            }
         });
         const result = await response.json();
         
+        console.log('🔵 Sales API Response:', result);
+        
         const tbody = document.getElementById("salesHistoryBody");
-        if (!tbody) return;
+        if (!tbody) {
+            console.log('🔵 Error: salesHistoryBody not found');
+            return;
+        }
         
         const sales = result.data || [];
         
         if (sales.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No recent sales</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No recent sales</td></tr>';
             return;
         }
         
         let html = '';
         sales.slice(0, 10).forEach(sale => {
+            const orderNumber = sale.order_number || 'N/A';
+            const productName = sale.product_name || 'N/A';
+            const date = sale.sale_date || '-';
+            const items = sale.item_count || 0;
+            const total = parseFloat(sale.total_amount || 0).toFixed(2);
+            const status = sale.status || 'completed';
+            
             html += `<tr>
-                        <td><small>${escapeHtml(sale.order_number)}</small></td>
-                        <td><small>${sale.created_at || '-'}</small></td>
-                        <td><small>${sale.item_count || 0}</small></td>
-                        <td><small>₱${parseFloat(sale.total || 0).toFixed(2)}</small></td>
-                        <td><span class="badge badge-success">Completed</span></td>
+                        <td><small>${escapeHtml(orderNumber)}</small></td>
+                        <td><small>${escapeHtml(productName)}</small></td>
+                        <td><small>${escapeHtml(date)}</small></td>
+                        <td><small>${items}</small></td>
+                        <td><small>₱${total}</small></td>
+                        <td><span class="badge badge-success">${escapeHtml(status)}</span></td>
                      </tr>`;
         });
         tbody.innerHTML = html;
+        console.log('🔵 Sales history displayed, count:', sales.length);
+        
     } catch (error) {
-        console.error('Error loading sales:', error);
+        console.error('🔵 Error loading sales:', error);
         const tbody = document.getElementById("salesHistoryBody");
-        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Error loading sales</td></tr>';
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Error loading sales</td></tr>';
+        }
     }
 }
 
@@ -871,6 +896,7 @@ document.addEventListener('visibilitychange', function() {
     if (!document.hidden) {
         console.log('Page became visible - refreshing products');
         loadProducts(true);
+        loadSalesHistory();
     }
 });
 
@@ -879,19 +905,28 @@ window.addEventListener('pageshow', function(event) {
     if (event.persisted || performance.getEntriesByType('navigation')[0].type === 'back_forward') {
         console.log('Page loaded from cache - refreshing products');
         loadProducts(true);
+        loadSalesHistory();
     }
 });
 
+// ============ EVENT LISTENERS ============
 // ============ EVENT LISTENERS ============
 $(document).ready(function() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
     
-    // Initial load
+    // Initial load - load both products AND sales history
     loadProducts(false);
+    loadSalesHistory();  // ← ADD THIS LINE - FIXES THE REFRESH ISSUE!
     
-    // Start auto-refresh every 30 seconds
+    // Start auto-refresh every 30 seconds for products
     startAutoRefresh();
+    
+    // Also auto-refresh sales history every 30 seconds
+    setInterval(function() {
+        console.log('Auto-refreshing sales history');
+        loadSalesHistory();
+    }, 30000);
     
     $("#addProductToSaleBtn").click(function() {
         loadProductSelector();

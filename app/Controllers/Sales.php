@@ -125,7 +125,22 @@ public function addStock()
     }
 }
 
-    public function getSalesHistoryJson()
+ public function getAllSuppliers()
+{
+    $supplierModel = new \App\Models\SupplierModel();
+    $suppliers = $supplierModel->findAll();
+    return $this->response->setJSON(['status' => 'success', 'data' => $suppliers]);
+}
+
+public function getAllCategories()
+{
+    $categoryModel = new \App\Models\CategoryModel();
+    $categories = $categoryModel->findAll();
+    return $this->response->setJSON(['status' => 'success', 'data' => $categories]);
+}
+
+
+public function getSalesHistoryJson()
 {
     $sales = $this->salesModel
         ->select('id, invoice_number, sale_date, total_amount, amount_paid, due_amount, status')
@@ -133,18 +148,38 @@ public function addStock()
         ->limit(20)
         ->findAll();
     
-    foreach ($sales as &$sale) {
-        $itemCount = $this->saleItemsModel->where('sale_id', $sale['id'])->countAllResults();
-        $sale['item_count'] = $itemCount;
-        $sale['total'] = $sale['total_amount'];
-        $sale['created_at'] = $sale['sale_date'];
-        // Make sure order_number uses invoice_number
-        $sale['order_number'] = $sale['invoice_number'];  // Add this line
+    $result = [];
+    foreach ($sales as $sale) {
+        // Get all items for this sale
+        $items = $this->saleItemsModel
+            ->select('sale_items.*, products.name as product_name')
+            ->join('products', 'products.id = sale_items.product_id')
+            ->where('sale_id', $sale['id'])
+            ->findAll();
+        
+        $itemCount = count($items);
+        
+        // Get product names - show multiple with '+ more'
+        $productNames = array_column($items, 'product_name');
+        if (count($productNames) > 1) {
+            $productDisplay = $productNames[0] . ' +' . (count($productNames) - 1) . ' more';
+        } else {
+            $productDisplay = $productNames[0] ?? 'N/A';
+        }
+        
+        $result[] = [
+            'order_number' => $sale['invoice_number'],
+            'product_name' => $productDisplay,
+            'sale_date' => $sale['sale_date'],
+            'item_count' => $itemCount,
+            'total_amount' => $sale['total_amount'],
+            'status' => $sale['status']
+        ];
     }
     
     return $this->response->setJSON([
         'status' => 'success',
-        'data' => $sales
+        'data' => $result
     ]);
 }
 
