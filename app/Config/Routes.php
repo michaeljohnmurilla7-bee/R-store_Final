@@ -231,3 +231,17 @@ $routes->group('sales', function($routes) {
     // Print receipt
     $routes->get('print/(:num)', 'Sales::printReceipt/$1');
 });
+
+// Report Routes
+$routes->group('reports', function($routes) {
+    $routes->get('/', 'Reports::index');
+    $routes->get('sales', 'Reports::sales');
+    $routes->get('inventory', 'Reports::inventory');
+    $routes->get('daily', 'Reports::daily');
+    $routes->get('daily/(:any)', 'Reports::daily/$1');
+    $routes->get('monthly', 'Reports::monthly');
+    $routes->get('monthly/(:any)/(:any)', 'Reports::monthly/$1/$2');
+    $routes->get('top-products', 'Reports::topProducts');
+    $routes->get('by-category', 'Reports::byCategory');
+    $routes->get('export/(:any)', 'Reports::export/$1');
+});
