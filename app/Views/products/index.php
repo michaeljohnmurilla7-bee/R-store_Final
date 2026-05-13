@@ -254,8 +254,8 @@
             <div class="col-md-4">
               <div class="form-group">
                 <label>Current Stock</label>
-                <input type="number" name="stock_qty" id="stock_qty" class="form-control" readonly>
-                <small class="text-muted ">Read-only</small>
+                <input type="number" name="stock_qty" id="stock_qty" class="form-control">
+                <small class="text-muted "></small>
               </div>
             </div>
           </div>

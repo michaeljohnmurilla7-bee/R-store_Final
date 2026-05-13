@@ -61,6 +61,8 @@ $routes->group('products', function($routes) {
     $routes->get('json', 'Products::jsonList');
 
     $routes->post('reactivate/(:num)', 'Products::reactivate/$1');
+
+    
 });
 
 // ===========================================================================
@@ -214,6 +216,9 @@ $routes->group('sales', function($routes) {
     
     // Create/Store
     $routes->post('saveSale', 'Sales::saveSale');
+    
+    // ADD STOCK ROUTE - FIXED (no 'sales/' prefix inside group)
+    $routes->post('addStock', 'Sales::addStock');  // ✅ This is correct
     
     // Reports
     $routes->get('dailyReport', 'Sales::dailyReport');

@@ -46,12 +46,13 @@ class ProductsModel extends Model
     // --------------------------------------------------------------------
     // Get products with category and supplier names (for DataTable)
     // --------------------------------------------------------------------
-    public function getProductsWithDetails()
+   public function getProductsWithDetails()
 {
     return $this->select('products.*, categories.name as category_name, suppliers.name as supplier_name')
         ->join('categories', 'categories.id = products.category_id', 'left')
         ->join('suppliers', 'suppliers.id = products.supplier_id', 'left')
-        // ->where('products.is_active', 1)  // Only show active products
+        // REMOVE the where clause to show all products
+        ->orderBy('products.is_active', 'DESC') // Show active first, then inactive
         ->orderBy('products.id', 'DESC')
         ->findAll();
 }
