@@ -35,49 +35,53 @@ class Reports extends BaseController
     }
 
     // Sales Report by Date Range
-    public function sales()
-    {
-        $startDate = $this->request->getGet('start_date') ?? date('Y-m-01');
-        $endDate = $this->request->getGet('end_date') ?? date('Y-m-d');
-        
-        // Get sales using existing SalesModel
-        $sales = $this->salesModel
-            ->where('sale_date >=', $startDate)
-            ->where('sale_date <=', $endDate . ' 23:59:59')
-            ->orderBy('sale_date', 'DESC')
-            ->findAll();
-        
-        // Get item count for each sale
-        foreach ($sales as &$sale) {
-            $sale['item_count'] = $this->saleItemsModel
-                ->where('sale_id', $sale['id'])
-                ->countAllResults();
-        }
-        
-        // Get summary using query builder directly
-        $summary = $this->db->table('sales')
-            ->select('
-                COUNT(*) as total_sales,
-                SUM(total_amount) as total_revenue,
-                SUM(discount) as total_discount,
-                SUM(amount_paid) as total_paid,
-                AVG(total_amount) as average_sale
-            ')
-            ->where('sale_date >=', $startDate)
-            ->where('sale_date <=', $endDate . ' 23:59:59')
+public function sales()
+{
+    $startDate = $this->request->getGet('start_date') ?? date('Y-m-01');
+    $endDate = $this->request->getGet('end_date') ?? date('Y-m-d');
+    
+    // Get sales using existing SalesModel
+    $sales = $this->salesModel
+        ->where('sale_date >=', $startDate)
+        ->where('sale_date <=', $endDate . ' 23:59:59')
+        ->orderBy('sale_date', 'DESC')
+        ->findAll();
+    
+    // FIX: Get item count for each sale - SUM quantities
+    foreach ($sales as &$sale) {
+        $totalQuantity = $this->saleItemsModel
+            ->select('SUM(quantity) as total')
+            ->where('sale_id', $sale['id'])
             ->get()
             ->getRowArray();
         
-        $data = [
-            'title' => 'Sales Report',
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'sales' => $sales,
-            'summary' => $summary
-        ];
-        
-        return view('reports/sales_report', $data);
+        $sale['item_count'] = $totalQuantity['total'] ?? 0;  // ← FIXED
     }
+    
+    // Rest of your code...
+    $summary = $this->db->table('sales')
+        ->select('
+            COUNT(*) as total_sales,
+            SUM(total_amount) as total_revenue,
+            SUM(discount) as total_discount,
+            SUM(amount_paid) as total_paid,
+            AVG(total_amount) as average_sale
+        ')
+        ->where('sale_date >=', $startDate)
+        ->where('sale_date <=', $endDate . ' 23:59:59')
+        ->get()
+        ->getRowArray();
+    
+    $data = [
+        'title' => 'Sales Report',
+        'start_date' => $startDate,
+        'end_date' => $endDate,
+        'sales' => $sales,
+        'summary' => $summary
+    ];
+    
+    return view('reports/sales_report', $data);
+}
 
     // Inventory Report
     public function inventory()
@@ -109,33 +113,45 @@ class Reports extends BaseController
         return view('reports/inventory_report', $data);
     }
 
-    // Daily Sales Report
+ // Daily Sales Report
 public function daily($date = null)
 {
-    // Get the date from URL parameter or from GET request
+ // Get the date
     if ($this->request->getGet('date')) {
         $date = $this->request->getGet('date');
     } elseif ($date === null) {
         $date = date('Y-m-d');
     }
     
-    // Debug - log the date being used
-    log_message('debug', 'Daily Report - Selected Date: ' . $date);
-    
     // Get sales for the day
     $sales = $this->salesModel
         ->where('DATE(sale_date)', $date)
-        ->orderBy('sale_date', 'DESC')
+        ->orderBy('id', 'DESC')
         ->findAll();
     
-    // Debug - log how many sales found
-    log_message('debug', 'Daily Report - Sales Found: ' . count($sales));
-    
     foreach ($sales as &$sale) {
-        $sale['item_count'] = $this->saleItemsModel
+        // Get total quantity
+        $totalQuantity = $this->saleItemsModel
+            ->select('SUM(quantity) as total')
             ->where('sale_id', $sale['id'])
-            ->countAllResults();
-        $sale['time'] = date('h:i A', strtotime($sale['sale_date']));
+            ->get()
+            ->getRowArray();
+        
+        $sale['item_count'] = $totalQuantity['total'] ?? 0;
+        
+        // Get product names for this sale
+        $products = $this->saleItemsModel
+            ->select('products.name')
+            ->join('products', 'products.id = sale_items.product_id')
+            ->where('sale_id', $sale['id'])
+            ->findAll();
+        
+        $productNames = array_column($products, 'name');
+        if (count($productNames) > 1) {
+            $sale['product_name'] = $productNames[0] . ' +' . (count($productNames) - 1);
+        } else {
+            $sale['product_name'] = $productNames[0] ?? 'N/A';
+        }
     }
     
     // Get daily summary
@@ -159,28 +175,32 @@ public function daily($date = null)
     
     return view('reports/daily_report', $data);
 }
-
     // Monthly Sales Report
     public function monthly($year = null, $month = null)
     {
-        $year = $year ?? date('Y');
-        $month = $month ?? date('m');
+           $year = $year ?? date('Y');
+    $month = $month ?? date('m');
+    
+    $startDate = $year . '-' . $month . '-01';
+    $endDate = date('Y-m-t', strtotime($startDate));
+    
+    // Get sales for the month
+    $sales = $this->salesModel
+        ->where('sale_date >=', $startDate)
+        ->where('sale_date <=', $endDate . ' 23:59:59')
+        ->orderBy('sale_date', 'DESC')
+        ->findAll();
+    
+    // FIX: Get total quantity for each sale
+    foreach ($sales as &$sale) {
+        $totalQuantity = $this->saleItemsModel
+            ->select('SUM(quantity) as total')
+            ->where('sale_id', $sale['id'])
+            ->get()
+            ->getRowArray();
         
-        $startDate = $year . '-' . $month . '-01';
-        $endDate = date('Y-m-t', strtotime($startDate));
-        
-        // Get sales for the month
-        $sales = $this->salesModel
-            ->where('sale_date >=', $startDate)
-            ->where('sale_date <=', $endDate . ' 23:59:59')
-            ->orderBy('sale_date', 'DESC')
-            ->findAll();
-        
-        foreach ($sales as &$sale) {
-            $sale['item_count'] = $this->saleItemsModel
-                ->where('sale_id', $sale['id'])
-                ->countAllResults();
-        }
+        $sale['item_count'] = $totalQuantity['total'] ?? 0;  // ← FIXED
+    }
         
         // Get daily breakdown for the month
         $dailyBreakdown = $this->db->table('sales')
@@ -295,62 +315,75 @@ public function daily($date = null)
     }
 
     // Export to CSV
-    public function export($type = 'sales')
-    {
-        $startDate = $this->request->getGet('start_date') ?? date('Y-m-01');
-        $endDate = $this->request->getGet('end_date') ?? date('Y-m-d');
+public function export($type = 'sales')
+{
+    $startDate = $this->request->getGet('start_date') ?? date('Y-m-01');
+    $endDate = $this->request->getGet('end_date') ?? date('Y-m-d');
+    
+    $filename = $type . '_report_' . date('Y-m-d') . '.csv';
+    
+    // Set headers for CSV download
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: no-cache, must-revalidate');
+    
+    $output = fopen('php://output', 'w');
+    
+    // Add UTF-8 BOM for Excel compatibility
+    fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+    
+    if ($type == 'sales') {
+        // Sales CSV headers
+        fputcsv($output, ['Invoice #', 'Date', 'Items', 'Total Amount', 'Discount', 'Amount Paid', 'Status']);
         
-        $filename = $type . '_report_' . date('Y-m-d') . '.csv';
+        $sales = $this->salesModel
+            ->where('sale_date >=', $startDate)
+            ->where('sale_date <=', $endDate . ' 23:59:59')
+            ->orderBy('sale_date', 'DESC')
+            ->findAll();
         
-        header('Content-Type: text/csv');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        
-        $output = fopen('php://output', 'w');
-        
-        if ($type == 'sales') {
-            // Sales CSV headers
-            fputcsv($output, ['Invoice #', 'Date', 'Items', 'Total Amount', 'Discount', 'Amount Paid', 'Status']);
+        foreach ($sales as $sale) {
+            // FIX: SUM quantities instead of COUNT rows
+            $totalQuantity = $this->saleItemsModel
+                ->select('SUM(quantity) as total')
+                ->where('sale_id', $sale['id'])
+                ->get()
+                ->getRowArray();
             
-            $sales = $this->salesModel
-                ->where('sale_date >=', $startDate)
-                ->where('sale_date <=', $endDate . ' 23:59:59')
-                ->orderBy('sale_date', 'DESC')
-                ->findAll();
+            $itemCount = $totalQuantity['total'] ?? 0;
             
-            foreach ($sales as $sale) {
-                $itemCount = $this->saleItemsModel->where('sale_id', $sale['id'])->countAllResults();
-                fputcsv($output, [
-                    $sale['invoice_number'],
-                    $sale['sale_date'],
-                    $itemCount,
-                    $sale['total_amount'],
-                    $sale['discount'],
-                    $sale['amount_paid'],
-                    $sale['status']
-                ]);
-            }
-        } elseif ($type == 'inventory') {
-            // Inventory CSV headers
-            fputcsv($output, ['ID', 'Name', 'SKU', 'Category', 'Supplier', 'Stock', 'Price', 'Cost', 'Reorder Level', 'Status']);
-            
-            $products = $this->productsModel->getProductsWithDetails();
-            foreach ($products as $product) {
-                fputcsv($output, [
-                    $product['id'],
-                    $product['name'],
-                    $product['sku'],
-                    $product['category_name'] ?? '',
-                    $product['supplier_name'] ?? '',
-                    $product['stock_qty'],
-                    $product['price'],
-                    $product['cost_price'],
-                    $product['reorder_level'],
-                    $product['is_active'] == 1 ? 'Active' : 'Inactive'
-                ]);
-            }
+            fputcsv($output, [
+                $sale['invoice_number'],
+                date('Y-m-d H:i:s', strtotime($sale['sale_date'])),
+                $itemCount,
+                number_format($sale['total_amount'], 2),
+                number_format($sale['discount'], 2),
+                number_format($sale['amount_paid'], 2),
+                ucfirst($sale['status'])
+            ]);
         }
+    } elseif ($type == 'inventory') {
+        // Inventory CSV headers
+        fputcsv($output, ['ID', 'Name', 'SKU', 'Category', 'Supplier', 'Stock', 'Selling Price', 'Cost Price', 'Reorder Level', 'Status']);
         
-        fclose($output);
-        exit();
+        $products = $this->productsModel->getProductsWithDetails();
+        foreach ($products as $product) {
+            fputcsv($output, [
+                $product['id'],
+                $product['name'],
+                $product['sku'],
+                $product['category_name'] ?? 'Uncategorized',
+                $product['supplier_name'] ?? 'No Supplier',
+                $product['stock_qty'] ?? 0,
+                number_format($product['price'], 2),
+                number_format($product['cost_price'] ?? 0, 2),
+                $product['reorder_level'] ?? 0,
+                $product['is_active'] == 1 ? 'Active' : 'Inactive'
+            ]);
+        }
     }
+    
+    fclose($output);
+    exit();
+}
 }

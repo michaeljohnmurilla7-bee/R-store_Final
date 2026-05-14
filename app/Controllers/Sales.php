@@ -144,7 +144,7 @@ public function getSalesHistoryJson()
 {
     $sales = $this->salesModel
         ->select('id, invoice_number, sale_date, total_amount, amount_paid, due_amount, status')
-        ->orderBy('id', 'DESC')
+        ->orderBy('id', 'DESC')  // ← Change ASC to DESC (or add this line)
         ->limit(20)
         ->findAll();
     
@@ -157,12 +157,12 @@ public function getSalesHistoryJson()
             ->where('sale_id', $sale['id'])
             ->findAll();
         
-        // Calculate TOTAL QUANTITY (sum of all quantities, not count of products)
+        // Calculate TOTAL QUANTITY
         $totalQuantity = 0;
         $productNames = [];
         
         foreach ($items as $item) {
-            $totalQuantity += $item['quantity'];  // ← Add the quantity, not just count
+            $totalQuantity += $item['quantity'];
             $productNames[] = $item['product_name'];
         }
         
@@ -177,7 +177,7 @@ public function getSalesHistoryJson()
             'order_number' => $sale['invoice_number'],
             'product_name' => $productDisplay,
             'sale_date' => $sale['sale_date'],
-            'item_count' => $totalQuantity,  // ← Changed: now shows total quantity, not product count
+            'item_count' => $totalQuantity,
             'total_amount' => $sale['total_amount'],
             'status' => $sale['status']
         ];

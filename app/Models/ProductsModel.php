@@ -51,9 +51,8 @@ class ProductsModel extends Model
     return $this->select('products.*, categories.name as category_name, suppliers.name as supplier_name')
         ->join('categories', 'categories.id = products.category_id', 'left')
         ->join('suppliers', 'suppliers.id = products.supplier_id', 'left')
-        // REMOVE the where clause to show all products
-        ->orderBy('products.is_active', 'DESC') // Show active first, then inactive
-        ->orderBy('products.id', 'DESC')
+        ->orderBy('products.id', 'DESC')  // ← DESC = Newest first (highest ID)
+        ->orderBy('products.is_active', 'DESC')
         ->findAll();
 }
 

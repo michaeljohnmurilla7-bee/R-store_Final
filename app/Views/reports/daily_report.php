@@ -196,7 +196,7 @@
                             <tr>
                                 <th>Invoice #</th>
                                 <th>Time</th>
-                                <th>Items</th>
+                                <th>Product</th>
                                 <th>Total Amount</th>
                                 <th>Discount</th>
                                 <th>Amount Paid</th>
@@ -208,7 +208,7 @@
                                 <?php foreach ($sales as $sale): ?>
                                     <tr>
                                         <td><?= $sale['invoice_number'] ?>
-                                        <td><?= date('h:i A', strtotime($sale['sale_date'])) ?>
+                                        <td><?= $sale['product_name'] ?? 'N/A' ?></td>
                                         <td><?= $sale['item_count'] ?? 0 ?>
                                         <td>₱<?= number_format($sale['total_amount'], 2) ?>
                                         <td>₱<?= number_format($sale['discount'], 2) ?>
