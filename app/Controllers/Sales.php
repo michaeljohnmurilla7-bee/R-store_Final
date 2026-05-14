@@ -157,10 +157,16 @@ public function getSalesHistoryJson()
             ->where('sale_id', $sale['id'])
             ->findAll();
         
-        $itemCount = count($items);
+        // Calculate TOTAL QUANTITY (sum of all quantities, not count of products)
+        $totalQuantity = 0;
+        $productNames = [];
         
-        // Get product names - show multiple with '+ more'
-        $productNames = array_column($items, 'product_name');
+        foreach ($items as $item) {
+            $totalQuantity += $item['quantity'];  // ← Add the quantity, not just count
+            $productNames[] = $item['product_name'];
+        }
+        
+        // Show first product + more if multiple
         if (count($productNames) > 1) {
             $productDisplay = $productNames[0] . ' +' . (count($productNames) - 1) . ' more';
         } else {
@@ -171,7 +177,7 @@ public function getSalesHistoryJson()
             'order_number' => $sale['invoice_number'],
             'product_name' => $productDisplay,
             'sale_date' => $sale['sale_date'],
-            'item_count' => $itemCount,
+            'item_count' => $totalQuantity,  // ← Changed: now shows total quantity, not product count
             'total_amount' => $sale['total_amount'],
             'status' => $sale['status']
         ];

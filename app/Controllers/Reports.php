@@ -110,45 +110,55 @@ class Reports extends BaseController
     }
 
     // Daily Sales Report
-    public function daily($date = null)
-    {
-        $date = $date ?? date('Y-m-d');
-        
-        // Get sales for the day
-        $sales = $this->salesModel
-            ->where('sale_date >=', $date . ' 00:00:00')
-            ->where('sale_date <=', $date . ' 23:59:59')
-            ->orderBy('sale_date', 'DESC')
-            ->findAll();
-        
-        foreach ($sales as &$sale) {
-            $sale['item_count'] = $this->saleItemsModel
-                ->where('sale_id', $sale['id'])
-                ->countAllResults();
-        }
-        
-        // Get daily summary
-        $summary = $this->db->table('sales')
-            ->select('
-                COUNT(*) as total_sales,
-                SUM(total_amount) as total_revenue,
-                SUM(discount) as total_discount,
-                SUM(amount_paid) as total_paid
-            ')
-            ->where('sale_date >=', $date . ' 00:00:00')
-            ->where('sale_date <=', $date . ' 23:59:59')
-            ->get()
-            ->getRowArray();
-        
-        $data = [
-            'title' => 'Daily Sales Report',
-            'date' => $date,
-            'sales' => $sales,
-            'summary' => $summary
-        ];
-        
-        return view('reports/daily_report', $data);
+public function daily($date = null)
+{
+    // Get the date from URL parameter or from GET request
+    if ($this->request->getGet('date')) {
+        $date = $this->request->getGet('date');
+    } elseif ($date === null) {
+        $date = date('Y-m-d');
     }
+    
+    // Debug - log the date being used
+    log_message('debug', 'Daily Report - Selected Date: ' . $date);
+    
+    // Get sales for the day
+    $sales = $this->salesModel
+        ->where('DATE(sale_date)', $date)
+        ->orderBy('sale_date', 'DESC')
+        ->findAll();
+    
+    // Debug - log how many sales found
+    log_message('debug', 'Daily Report - Sales Found: ' . count($sales));
+    
+    foreach ($sales as &$sale) {
+        $sale['item_count'] = $this->saleItemsModel
+            ->where('sale_id', $sale['id'])
+            ->countAllResults();
+        $sale['time'] = date('h:i A', strtotime($sale['sale_date']));
+    }
+    
+    // Get daily summary
+    $summary = $this->db->table('sales')
+        ->select('
+            COUNT(*) as total_sales,
+            SUM(total_amount) as total_revenue,
+            SUM(discount) as total_discount,
+            SUM(amount_paid) as total_paid
+        ')
+        ->where('DATE(sale_date)', $date)
+        ->get()
+        ->getRowArray();
+    
+    $data = [
+        'title' => 'Daily Sales Report',
+        'date' => $date,
+        'sales' => $sales,
+        'summary' => $summary
+    ];
+    
+    return view('reports/daily_report', $data);
+}
 
     // Monthly Sales Report
     public function monthly($year = null, $month = null)

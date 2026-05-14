@@ -24,7 +24,7 @@
             <div class="row">
                 <!-- Sales Reports -->
                 <div class="col-md-6">
-                    <div class="card card-primary">
+                    <div class="card card-info">
                         <div class="card-header">
                             <h3 class="card-title">
                                 <i class="fas fa-chart-line"></i> Sales Reports
@@ -71,7 +71,7 @@
             <!-- Export Section -->
             <div class="row mt-3">
                 <div class="col-12">
-                    <div class="card card-success">
+                    <div class="card card-info">
                         <div class="card-header">
                             <h3 class="card-title">
                                 <i class="fas fa-download"></i> Export Reports
@@ -80,7 +80,7 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <a href="<?= base_url('reports/export/sales') ?>" class="btn btn-success btn-block">
+                                    <a href="<?= base_url('reports/export/sales') ?>" class="btn btn-info btn-block">
                                         <i class="fas fa-file-csv"></i> Export Sales to CSV
                                     </a>
                                 </div>

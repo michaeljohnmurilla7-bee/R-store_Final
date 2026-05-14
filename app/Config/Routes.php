@@ -245,3 +245,10 @@ $routes->group('reports', function($routes) {
     $routes->get('by-category', 'Reports::byCategory');
     $routes->get('export/(:any)', 'Reports::export/$1');
 });
+
+// Dashboard chart routes
+$routes->get('dashboard/getSalesChartData', 'Dashboard::getSalesChartData');
+$routes->get('dashboard/getTopProductsChartData', 'Dashboard::getTopProductsChartData');
+$routes->get('dashboard/getPaymentStatusData', 'Dashboard::getPaymentStatusData');
+$routes->get('dashboard/getSalesChartDataFiltered', 'Dashboard::getSalesChartDataFiltered');
+$routes->get('dashboard/debugSalesData', 'Dashboard::debugSalesData');

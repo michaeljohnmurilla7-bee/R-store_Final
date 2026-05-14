@@ -1,5 +1,103 @@
 <?= $this->extend('theme/template') ?>
 
+<?= $this->section('styles') ?>
+<style>
+    /* Grey Card Colors - Matching Dashboard */
+    .bg-grey-light {
+        background: linear-gradient(135deg, #e8e8e8 0%, #d4d4d4 100%) !important;
+    }
+    .bg-grey-medium {
+        background: linear-gradient(135deg, #e0e0e0 0%, #cccccc 100%) !important;
+    }
+    .bg-grey-dark {
+        background: linear-gradient(135deg, #d8d8d8 0%, #c4c4c4 100%) !important;
+    }
+    .bg-grey-charcoal {
+        background: linear-gradient(135deg, #d0d0d0 0%, #bbbbbb 100%) !important;
+    }
+    
+    /* Text colors for grey cards */
+    .bg-grey-light h3, .bg-grey-light p,
+    .bg-grey-medium h3, .bg-grey-medium p,
+    .bg-grey-dark h3, .bg-grey-dark p,
+    .bg-grey-charcoal h3, .bg-grey-charcoal p {
+        color: #1a1a1a !important;
+    }
+    
+    /* Icon styling */
+    .small-box .icon {
+        font-size: 50px;
+        position: absolute;
+        right: 15px;
+        top: 15px;
+        opacity: 0.7;
+    }
+    
+    /* Icon Grey Color */
+    .icon-grey {
+        color: #888888 !important;
+    }
+    
+    /* Button Styles */
+    .btn-primary {
+        background: #6c757d !important;
+        border-color: #6c757d !important;
+    }
+    .btn-primary:hover {
+        background: #5a6268 !important;
+        border-color: #5a6268 !important;
+    }
+    .btn-success {
+        background: #28a745 !important;
+        border-color: #28a745 !important;
+    }
+    .btn-success:hover {
+        background: #1a5a2a !important;
+        border-color: #1a5a2a !important;
+    }
+    
+    /* Table Styles */
+    .table {
+        color: #333333;
+    }
+    .table thead th {
+        background: #f5f5f5;
+        color: #1a1a1a;
+        font-weight: 600;
+        border-bottom: 2px solid #28a745;
+    }
+    .table tbody tr:hover {
+        background: #f8f9fa;
+    }
+    
+    /* Badge Styles */
+    .badge-success {
+        background: #28a745;
+        padding: 5px 10px;
+        border-radius: 20px;
+    }
+    
+    /* Card Header */
+    .card-header {
+        background: #f8f9fa;
+        border-bottom: 2px solid #28a745;
+    }
+    .card-header h3 {
+        color: #1a1a1a;
+        font-weight: 600;
+    }
+    
+    /* Form Controls */
+    .form-control {
+        border-color: #dddddd;
+    }
+    .form-control:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+</style>
+<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 
 <div class="content-wrapper">
@@ -47,49 +145,56 @@
                 </div>
             </div>
 
-            <!-- Summary Cards -->
+            <!-- Summary Cards - All Grey Colors -->
             <div class="row">
-                <div class="col-md-3">
-                    <div class="small-box bg-info">
+                <!-- Total Transactions - Light Grey -->
+                <div class="col-md-3 col-6">
+                    <div class="small-box bg-grey-light">
                         <div class="inner">
                             <h3><?= number_format($summary['total_sales'] ?? 0) ?></h3>
                             <p>Total Transactions</p>
                         </div>
                         <div class="icon">
-                            <i class="fas fa-shopping-cart"></i>
+                            <i class="fas fa-shopping-cart fa-3x icon-grey"></i>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="small-box bg-success">
+
+                <!-- Total Revenue - Medium Grey -->
+                <div class="col-md-3 col-6">
+                    <div class="small-box bg-grey-medium">
                         <div class="inner">
                             <h3>₱<?= number_format($summary['total_revenue'] ?? 0, 2) ?></h3>
                             <p>Total Revenue</p>
                         </div>
                         <div class="icon">
-                            <i class="fas fa-money-bill"></i>
+                            <i class="fas fa-money-bill-wave fa-3x icon-grey"></i>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="small-box bg-warning">
+
+                <!-- Total Discounts - Dark Grey -->
+                <div class="col-md-3 col-6">
+                    <div class="small-box bg-grey-dark">
                         <div class="inner">
                             <h3>₱<?= number_format($summary['total_discount'] ?? 0, 2) ?></h3>
                             <p>Total Discounts</p>
                         </div>
                         <div class="icon">
-                            <i class="fas fa-tags"></i>
+                            <i class="fas fa-tags fa-3x icon-grey"></i>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="small-box bg-primary">
+
+                <!-- Average Sale - Charcoal Grey -->
+                <div class="col-md-3 col-6">
+                    <div class="small-box bg-grey-charcoal">
                         <div class="inner">
                             <h3>₱<?= number_format($summary['average_sale'] ?? 0, 2) ?></h3>
                             <p>Average Sale</p>
                         </div>
                         <div class="icon">
-                            <i class="fas fa-chart-line"></i>
+                            <i class="fas fa-chart-line fa-3x icon-grey"></i>
                         </div>
                     </div>
                 </div>
@@ -117,7 +222,7 @@
                             <?php if (!empty($sales)): ?>
                                 <?php foreach ($sales as $sale): ?>
                                     <tr>
-                                        <td><?= $sale['invoice_number'] ?></td>
+                                        <td><?= $sale['invoice_number'] ?>
                                         <td><?= date('Y-m-d H:i:s', strtotime($sale['sale_date'])) ?>
                                         <td><?= $sale['item_count'] ?? 0 ?>
                                         <td>₱<?= number_format($sale['total_amount'], 2) ?>
